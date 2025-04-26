@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { evaluateFormula } from '../utils/formulaEvaluator';
@@ -404,6 +403,114 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     return cellColIdx >= minColIdx && cellColIdx <= maxColIdx && cellRowIdx >= minRowIdx && cellRowIdx <= maxRowIdx;
   };
 
+  // Keyboard navigation handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (editing) return; // Don't handle navigation when editing
+
+      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      if (!col || !rowStr) return;
+
+      const colIndex = col.charCodeAt(0) - 65;
+      const rowIndex = parseInt(rowStr, 10) - 1;
+
+      let nextColIndex = colIndex;
+      let nextRowIndex = rowIndex;
+
+      switch (e.key) {
+        case 'ArrowUp':
+          nextRowIndex = Math.max(0, rowIndex - 1);
+          break;
+        case 'ArrowDown':
+          nextRowIndex = rowIndex + 1;
+          break;
+        case 'ArrowLeft':
+          nextColIndex = Math.max(0, colIndex - 1);
+          break;
+        case 'ArrowRight':
+          nextColIndex = colIndex + 1;
+          break;
+        case 'Tab':
+          e.preventDefault();
+          nextColIndex = e.shiftKey ? colIndex - 1 : colIndex + 1;
+          break;
+        case 'Enter':
+          if (!editing) {
+            e.preventDefault();
+            nextRowIndex = rowIndex + 1;
+          }
+          break;
+        case ' ':
+          if (e.ctrlKey) {
+            e.preventDefault();
+            // Select entire column
+            const startCell = `${col}1`;
+            const endCell = `${col}${rows}`;
+            setSelection({ startCell, endCell });
+            return;
+          }
+          break;
+        default:
+          return;
+      }
+
+      // Handle shift selection
+      if (e.shiftKey && !['Tab', 'Enter'].includes(e.key)) {
+        e.preventDefault();
+        const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
+        
+        if (!selection) {
+          setSelection({ startCell: activeCell, endCell: nextCellId });
+        } else {
+          setSelection({ ...selection, endCell: nextCellId });
+        }
+      } else {
+        // Clear selection if not shift-selecting
+        setSelection(null);
+      }
+
+      // Update active cell
+      const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
+      onCellSelect(nextCellId);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeCell, editing, rows, selection, onCellSelect]);
+
+  // Column selection handler
+  const handleColumnHeaderClick = (colIndex: number, e: React.MouseEvent) => {
+    const colLetter = getColumnLabel(colIndex);
+    const startCell = `${colLetter}1`;
+    const endCell = `${colLetter}${rows}`;
+    
+    if (e.shiftKey && selection) {
+      // Extend existing selection
+      setSelection({ ...selection, endCell });
+    } else {
+      // New selection
+      setSelection({ startCell, endCell });
+    }
+    
+    toast.success(`Selected column ${colLetter}`);
+  };
+
+  // Row selection handler
+  const handleRowHeaderClick = (rowIndex: number, e: React.MouseEvent) => {
+    const startCell = `A${rowIndex + 1}`;
+    const endCell = `${getColumnLabel(columns - 1)}${rowIndex + 1}`;
+    
+    if (e.shiftKey && selection) {
+      // Extend existing selection
+      setSelection({ ...selection, endCell });
+    } else {
+      // New selection
+      setSelection({ startCell, endCell });
+    }
+    
+    toast.success(`Selected row ${rowIndex + 1}`);
+  };
+
   const renderCell = (rowIndex: number, colIndex: number) => {
     const cellId = getCellId(rowIndex, colIndex);
     const cellData = cells[cellId];
@@ -514,12 +621,13 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
           {Array.from({ length: columns }, (_, i) => (
             <div 
               key={`header-${i}`} 
-              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-sm flex-none"
+              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-sm flex-none cursor-pointer hover:bg-excel-hoverBg"
               style={{ 
                 width: `${columnWidths[getColumnLabel(i)] || 100}px`, 
                 minWidth: `${columnWidths[getColumnLabel(i)] || 100}px`,
                 height: '24px'
               }}
+              onClick={(e) => handleColumnHeaderClick(i, e)}
             >
               {getColumnLabel(i)}
             </div>
@@ -534,12 +642,13 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
           {Array.from({ length: rows }, (_, i) => (
             <div 
               key={`row-${i}`} 
-              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-sm"
+              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer hover:bg-excel-hoverBg"
               style={{ 
                 width: '50px', 
                 height: `${rowHeights[i + 1] || 24}px`,
                 minHeight: `${rowHeights[i + 1] || 24}px`
               }}
+              onClick={(e) => handleRowHeaderClick(i, e)}
             >
               {i + 1}
             </div>

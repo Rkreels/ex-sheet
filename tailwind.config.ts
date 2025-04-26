@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				excel: {
+					blue: '#1565C0',
+					lightBlue: '#E3F2FD',
+					headerBg: '#F5F5F5',
+					gridBorder: '#E0E0E0',
+					toolbarBg: '#F8F9FA',
+					hoverBg: '#F1F8FF',
+					activeBg: '#E8F0FE',
+					tabSelected: '#1565C0',
+					tabHover: '#E3F2FD',
 				}
 			},
 			borderRadius: {

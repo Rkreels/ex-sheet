@@ -1,21 +1,21 @@
-
 import React, { useState, useEffect } from 'react';
 import ExcelToolbar from './ExcelToolbar';
 import Spreadsheet from './Spreadsheet';
 import SheetTabs from './SheetTabs';
 import FormulaBar from './FormulaBar';
 import ChartDialog from './ChartDialog';
+import Navigation from './Navigation';
+import voiceAssistant from '../utils/voiceAssistant';
 import { Sheet, ChartData, FormulaFunctionName, FormulaFunction } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { toast } from "sonner";
 
-// Define formula functions
 const formulaFunctions: Record<FormulaFunctionName, FormulaFunction> = {
   SUM: {
     name: 'SUM',
     description: 'Adds all the numbers in a range of cells',
     usage: 'SUM(number1, [number2], ...)',
-    execute: () => 0 // Implementation in formulaEvaluator.ts
+    execute: () => 0
   },
   AVERAGE: {
     name: 'AVERAGE',
@@ -116,7 +116,6 @@ const formulaFunctions: Record<FormulaFunctionName, FormulaFunction> = {
 };
 
 const ExcelApp = () => {
-  // Initialize with one empty sheet
   const [sheets, setSheets] = useState<Sheet[]>([
     { 
       id: 'sheet1', 
@@ -166,6 +165,7 @@ const ExcelApp = () => {
     
     const cellValue = activeSheet.cells[cellId]?.value || '';
     setFormulaValue(cellValue);
+    voiceAssistant.speak(`Selected cell ${cellId}`);
   };
 
   const handleFormulaChange = (value: string) => {
@@ -235,13 +235,11 @@ const ExcelApp = () => {
   };
 
   const handleSortAsc = () => {
-    // Extract selected column
     const colLetter = activeCell.match(/[A-Z]+/)?.[0] || 'A';
     if (!colLetter) return;
     
     const cellsInColumn: {id: string, value: string, row: number}[] = [];
     
-    // Get all cells in the column
     Object.entries(activeSheet.cells).forEach(([cellId, cell]) => {
       const cellColLetter = cellId.match(/[A-Z]+/)?.[0];
       if (cellColLetter === colLetter) {
@@ -256,7 +254,6 @@ const ExcelApp = () => {
       }
     });
     
-    // Sort cells by value
     cellsInColumn.sort((a, b) => {
       const numA = parseFloat(a.value);
       const numB = parseFloat(b.value);
@@ -268,11 +265,9 @@ const ExcelApp = () => {
       return a.value.localeCompare(b.value);
     });
     
-    // Update sheet
     const updatedCells = { ...activeSheet.cells };
     
     cellsInColumn.forEach((cell, index) => {
-      // Get all cells in the row
       Object.entries(activeSheet.cells).forEach(([cellId, cellData]) => {
         const rowMatch = cellId.match(/[A-Z]+(\d+)/);
         if (rowMatch && parseInt(rowMatch[1], 10) === cell.row) {
@@ -295,13 +290,11 @@ const ExcelApp = () => {
   };
 
   const handleSortDesc = () => {
-    // Extract selected column
     const colLetter = activeCell.match(/[A-Z]+/)?.[0] || 'A';
     if (!colLetter) return;
     
     const cellsInColumn: {id: string, value: string, row: number}[] = [];
     
-    // Get all cells in the column
     Object.entries(activeSheet.cells).forEach(([cellId, cell]) => {
       const cellColLetter = cellId.match(/[A-Z]+/)?.[0];
       if (cellColLetter === colLetter) {
@@ -316,7 +309,6 @@ const ExcelApp = () => {
       }
     });
     
-    // Sort cells by value
     cellsInColumn.sort((a, b) => {
       const numA = parseFloat(a.value);
       const numB = parseFloat(b.value);
@@ -328,11 +320,9 @@ const ExcelApp = () => {
       return b.value.localeCompare(a.value);
     });
     
-    // Update sheet
     const updatedCells = { ...activeSheet.cells };
     
     cellsInColumn.forEach((cell, index) => {
-      // Get all cells in the row
       Object.entries(activeSheet.cells).forEach(([cellId, cellData]) => {
         const rowMatch = cellId.match(/[A-Z]+(\d+)/);
         if (rowMatch && parseInt(rowMatch[1], 10) === cell.row) {
@@ -355,25 +345,20 @@ const ExcelApp = () => {
   };
 
   const handlePercentFormat = () => {
-    // Get current cell value
     const cellData = activeSheet.cells[activeCell];
     if (!cellData) return;
     
     let value = cellData.value;
     if (value.startsWith('=')) {
-      // It's a formula, evaluate it first
       const result = evaluateFormula(value.substring(1), activeSheet.cells);
       const numResult = parseFloat(result);
       if (!isNaN(numResult)) {
-        // Format as percentage
         const percent = (numResult * 100).toFixed(2) + '%';
         handleCellChange(activeCell, percent);
       }
     } else {
-      // Direct value
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
-        // Format as percentage
         const percent = (numValue * 100).toFixed(2) + '%';
         handleCellChange(activeCell, percent);
       }
@@ -387,12 +372,21 @@ const ExcelApp = () => {
   };
 
   const handleDataAnalysis = () => {
-    // For now, just show a toast message
     toast.info("Data analysis feature coming soon!");
   };
-  
+
+  const handleDemoData = (demoData: Record<string, any>) => {
+    setSheets(prevSheets => 
+      prevSheets.map(sheet => 
+        sheet.id === activeSheetId 
+          ? { ...sheet, cells: demoData }
+          : sheet
+      )
+    );
+    toast.success("Demo data loaded successfully!");
+  };
+
   useEffect(() => {
-    // Check for formulas in cells and evaluate them when dependencies change
     Object.entries(activeSheet.cells).forEach(([cellId, cell]) => {
       if (cell.value.startsWith('=')) {
         try {
@@ -406,6 +400,7 @@ const ExcelApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
+      <Navigation onLoadDemoData={handleDemoData} />
       <div className="flex-none bg-excel-toolbarBg border-b border-excel-gridBorder">
         <ExcelToolbar 
           onBoldClick={() => applyFormat('bold')} 

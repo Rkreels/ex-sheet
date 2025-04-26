@@ -103,6 +103,38 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
           onCellSelect(`${nextCol}${rowStr}`);
         }
       }
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+               e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      // Handle arrow key navigation when editing
+      if (editing) return;
+      
+      e.preventDefault();
+      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      if (!col || !rowStr) return;
+      
+      const colIndex = col.charCodeAt(0) - 65;
+      const rowIndex = parseInt(rowStr, 10) - 1;
+      
+      let nextColIndex = colIndex;
+      let nextRowIndex = rowIndex;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          nextRowIndex = Math.max(0, rowIndex - 1);
+          break;
+        case 'ArrowDown':
+          nextRowIndex = Math.min(rows - 1, rowIndex + 1);
+          break;
+        case 'ArrowLeft':
+          nextColIndex = Math.max(0, colIndex - 1);
+          break;
+        case 'ArrowRight':
+          nextColIndex = Math.min(columns - 1, colIndex + 1);
+          break;
+      }
+      
+      const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
+      onCellSelect(nextCellId);
     }
   };
 
@@ -119,6 +151,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
           displayValue = evaluateFormula(cellData.value.substring(1), cells);
         } catch (error) {
           displayValue = '#ERROR';
+          console.error('Formula evaluation error:', error);
         }
       } else {
         displayValue = cellData.value;
@@ -164,6 +197,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
               "w-full h-full px-1 overflow-hidden",
               cellData?.format?.bold && "font-bold",
               cellData?.format?.italic && "italic",
+              cellData?.format?.underline && "underline",
               cellData?.format?.alignment === 'left' && "text-left",
               cellData?.format?.alignment === 'center' && "text-center",
               cellData?.format?.alignment === 'right' && "text-right",

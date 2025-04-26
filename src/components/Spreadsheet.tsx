@@ -2,7 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { evaluateFormula } from '../utils/formulaEvaluator';
-import { Cell } from '../types/sheet';
+import { Cell, CellSelection } from '../types/sheet';
+import CellContextMenu from './CellContextMenu';
+import { toast } from "sonner";
 
 interface SpreadsheetProps {
   cells: Record<string, Cell>;
@@ -23,10 +25,15 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
-  const [rows, setRows] = useState(50);
+  const [rows, setRows] = useState(100);
   const [columns, setColumns] = useState(26); // A to Z
+  const [selection, setSelection] = useState<CellSelection | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [draggedCell, setDraggedCell] = useState<string | null>(null);
+  const [clipboard, setClipboard] = useState<{cells: Record<string, Cell>, startCell: string} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Focus input when editing begins
   useEffect(() => {
@@ -35,8 +42,44 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     }
   }, [editing]);
 
+  // Implement infinite scrolling
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    // If user has scrolled near the bottom, add more rows
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
+      setRows(prevRows => prevRows + 50);
+    }
+    
+    // Check horizontal scroll to add more columns if needed
+    const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
+    if (scrollLeft + clientWidth >= scrollWidth - 200) {
+      setColumns(prevCols => prevCols + 10);
+    }
+  };
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+
   const getColumnLabel = (index: number) => {
-    return String.fromCharCode(65 + index); // A, B, C, ...
+    // Handle column labels beyond Z (AA, AB, etc.)
+    if (index < 26) {
+      return String.fromCharCode(65 + index); // A, B, C, ...
+    } else {
+      const firstChar = String.fromCharCode(65 + Math.floor(index / 26) - 1);
+      const secondChar = String.fromCharCode(65 + (index % 26));
+      return `${firstChar}${secondChar}`;
+    }
   };
 
   const getCellId = (rowIndex: number, colIndex: number) => {
@@ -52,6 +95,27 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
       setEditValue(cells[cellId]?.value || '');
     } else {
       setEditing(false);
+    }
+  };
+
+  const handleCellMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
+    const cellId = getCellId(rowIndex, colIndex);
+    setIsSelecting(true);
+    setSelection({ startCell: cellId, endCell: cellId });
+    onCellSelect(cellId);
+  };
+
+  const handleCellMouseOver = (rowIndex: number, colIndex: number) => {
+    if (isSelecting && selection) {
+      const cellId = getCellId(rowIndex, colIndex);
+      setSelection(prev => prev ? { ...prev, endCell: cellId } : null);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsSelecting(false);
+    if (selection) {
+      toast.info("Selected range: " + selection.startCell + " to " + selection.endCell);
     }
   };
 
@@ -138,10 +202,213 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     }
   };
 
+  const handleCellDragStart = (cellId: string) => {
+    setDraggedCell(cellId);
+    // Set visual drag effect
+    document.body.style.cursor = 'move';
+  };
+
+  const handleCellDragEnd = () => {
+    setDraggedCell(null);
+    document.body.style.cursor = 'default';
+  };
+
+  const handleCellDrop = (targetCellId: string) => {
+    if (!draggedCell || draggedCell === targetCellId) return;
+    
+    // Swap cell contents
+    const sourceCell = cells[draggedCell];
+    const targetCell = cells[targetCellId];
+    
+    if (sourceCell) {
+      onCellChange(targetCellId, sourceCell.value);
+    }
+    
+    if (targetCell) {
+      onCellChange(draggedCell, targetCell.value);
+    } else {
+      // If target was empty, clear source
+      onCellChange(draggedCell, '');
+    }
+    
+    toast.success(`Moved cell from ${draggedCell} to ${targetCellId}`);
+  };
+
+  const handleCopy = () => {
+    if (selection) {
+      // Extract the selected range
+      const [startCol, startRowStr] = selection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      const [endCol, endRowStr] = selection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!startCol || !startRowStr || !endCol || !endRowStr) return;
+      
+      // Get the selection rectangle
+      const startColIdx = startCol.charCodeAt(0) - 65;
+      const startRowIdx = parseInt(startRowStr, 10) - 1;
+      const endColIdx = endCol.charCodeAt(0) - 65;
+      const endRowIdx = parseInt(endRowStr, 10) - 1;
+      
+      const minColIdx = Math.min(startColIdx, endColIdx);
+      const maxColIdx = Math.max(startColIdx, endColIdx);
+      const minRowIdx = Math.min(startRowIdx, endRowIdx);
+      const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+      
+      // Copy all cells in the selection
+      const selectedCells: Record<string, Cell> = {};
+      
+      for (let row = minRowIdx; row <= maxRowIdx; row++) {
+        for (let col = minColIdx; col <= maxColIdx; col++) {
+          const cellId = `${String.fromCharCode(65 + col)}${row + 1}`;
+          if (cells[cellId]) {
+            selectedCells[cellId] = { ...cells[cellId] };
+          }
+        }
+      }
+      
+      // Store in clipboard with position information
+      setClipboard({
+        cells: selectedCells,
+        startCell: `${String.fromCharCode(65 + minColIdx)}${minRowIdx + 1}`
+      });
+      
+      toast.success("Cells copied to clipboard");
+    } else if (activeCell && cells[activeCell]) {
+      // Copy single active cell
+      const selectedCells: Record<string, Cell> = {
+        [activeCell]: { ...cells[activeCell] }
+      };
+      setClipboard({
+        cells: selectedCells,
+        startCell: activeCell
+      });
+      
+      toast.success("Cell copied to clipboard");
+    }
+  };
+
+  const handleCut = () => {
+    handleCopy();
+    handleDelete();
+  };
+
+  const handlePaste = () => {
+    if (!clipboard) {
+      toast.error("Nothing to paste");
+      return;
+    }
+    
+    // Get target position
+    const [targetCol, targetRowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [startCol, startRowStr] = clipboard.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    
+    if (!targetCol || !targetRowStr || !startCol || !startRowStr) return;
+    
+    const targetColIdx = targetCol.charCodeAt(0) - 65;
+    const targetRowIdx = parseInt(targetRowStr, 10) - 1;
+    const startColIdx = startCol.charCodeAt(0) - 65;
+    const startRowIdx = parseInt(startRowStr, 10) - 1;
+    
+    // Calculate offset
+    const colOffset = targetColIdx - startColIdx;
+    const rowOffset = targetRowIdx - startRowIdx;
+    
+    // Paste all cells with the offset
+    Object.entries(clipboard.cells).forEach(([cellId, cell]) => {
+      const [col, rowStr] = cellId.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!col || !rowStr) return;
+      
+      const colIdx = col.charCodeAt(0) - 65;
+      const rowIdx = parseInt(rowStr, 10) - 1;
+      
+      const newColIdx = colIdx + colOffset;
+      const newRowIdx = rowIdx + rowOffset;
+      
+      if (newColIdx >= 0 && newColIdx < columns && newRowIdx >= 0 && newRowIdx < rows) {
+        const newCellId = `${String.fromCharCode(65 + newColIdx)}${newRowIdx + 1}`;
+        onCellChange(newCellId, cell.value);
+      }
+    });
+    
+    toast.success("Pasted from clipboard");
+  };
+
+  const handleDelete = () => {
+    if (selection) {
+      // Delete all cells in the selection
+      const [startCol, startRowStr] = selection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      const [endCol, endRowStr] = selection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!startCol || !startRowStr || !endCol || !endRowStr) return;
+      
+      // Get the selection rectangle
+      const startColIdx = startCol.charCodeAt(0) - 65;
+      const startRowIdx = parseInt(startRowStr, 10) - 1;
+      const endColIdx = endCol.charCodeAt(0) - 65;
+      const endRowIdx = parseInt(endRowStr, 10) - 1;
+      
+      const minColIdx = Math.min(startColIdx, endColIdx);
+      const maxColIdx = Math.max(startColIdx, endColIdx);
+      const minRowIdx = Math.min(startRowIdx, endRowIdx);
+      const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+      
+      // Delete all cells in the selection
+      for (let row = minRowIdx; row <= maxRowIdx; row++) {
+        for (let col = minColIdx; col <= maxColIdx; col++) {
+          const cellId = `${String.fromCharCode(65 + col)}${row + 1}`;
+          if (cells[cellId]) {
+            onCellChange(cellId, '');
+          }
+        }
+      }
+      
+      toast.success("Cells deleted");
+    } else if (activeCell) {
+      // Delete active cell
+      onCellChange(activeCell, '');
+      toast.success("Cell deleted");
+    }
+  };
+
+  const handleMove = () => {
+    if (draggedCell) {
+      toast.info("Drop on target cell to move content");
+    } else {
+      setDraggedCell(activeCell);
+      document.body.style.cursor = 'move';
+      toast.info("Select destination cell to move");
+    }
+  };
+
+  const isCellInSelection = (cellId: string) => {
+    if (!selection) return false;
+    
+    const [startCol, startRowStr] = selection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [endCol, endRowStr] = selection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [cellCol, cellRowStr] = cellId.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    
+    if (!startCol || !startRowStr || !endCol || !endRowStr || !cellCol || !cellRowStr) return false;
+    
+    const startColIdx = startCol.charCodeAt(0) - 65;
+    const startRowIdx = parseInt(startRowStr, 10) - 1;
+    const endColIdx = endCol.charCodeAt(0) - 65;
+    const endRowIdx = parseInt(endRowStr, 10) - 1;
+    const cellColIdx = cellCol.charCodeAt(0) - 65;
+    const cellRowIdx = parseInt(cellRowStr, 10) - 1;
+    
+    const minColIdx = Math.min(startColIdx, endColIdx);
+    const maxColIdx = Math.max(startColIdx, endColIdx);
+    const minRowIdx = Math.min(startRowIdx, endRowIdx);
+    const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+    
+    return cellColIdx >= minColIdx && cellColIdx <= maxColIdx && cellRowIdx >= minRowIdx && cellRowIdx <= maxRowIdx;
+  };
+
   const renderCell = (rowIndex: number, colIndex: number) => {
     const cellId = getCellId(rowIndex, colIndex);
     const cellData = cells[cellId];
     const isActive = cellId === activeCell;
+    const isSelected = isCellInSelection(cellId);
     
     // Calculate display value (for formulas)
     let displayValue = '';
@@ -164,13 +431,13 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     // Get row height
     const height = rowHeights[rowIndex + 1] || 24;
 
-    return (
+    const cellContent = (
       <div
-        key={`${rowIndex}-${colIndex}`}
         className={cn(
           "border-r border-b border-excel-gridBorder relative",
           isActive && "border border-excel-blue z-10",
-          !isActive && "hover:bg-excel-hoverBg"
+          isSelected && !isActive && "bg-excel-blue/20",
+          !isActive && !isSelected && "hover:bg-excel-hoverBg"
         )}
         style={{ 
           width: `${width}px`, 
@@ -180,6 +447,13 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
         }}
         onClick={() => handleCellClick(rowIndex, colIndex)}
         onDoubleClick={() => handleDoubleClick(rowIndex, colIndex)}
+        onMouseDown={(e) => handleCellMouseDown(rowIndex, colIndex, e)}
+        onMouseOver={() => handleCellMouseOver(rowIndex, colIndex)}
+        onDrop={() => handleCellDrop(cellId)}
+        onDragOver={(e) => e.preventDefault()}
+        draggable={!editing}
+        onDragStart={() => handleCellDragStart(cellId)} 
+        onDragEnd={handleCellDragEnd}
       >
         {isActive && editing ? (
           <input
@@ -209,10 +483,27 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
         )}
       </div>
     );
+
+    return (
+      <CellContextMenu
+        key={`${rowIndex}-${colIndex}`}
+        onCopy={handleCopy}
+        onCut={handleCut}
+        onPaste={handlePaste}
+        onDelete={handleDelete}
+        onMove={handleMove}
+      >
+        {cellContent}
+      </CellContextMenu>
+    );
   };
 
   return (
-    <div className="relative overflow-auto w-full h-full" ref={gridRef}>
+    <div 
+      className="relative overflow-auto w-full h-full" 
+      ref={containerRef}
+      onMouseUp={handleMouseUp}
+    >
       {/* Header row with column labels */}
       <div className="sticky top-0 z-20 flex">
         <div 

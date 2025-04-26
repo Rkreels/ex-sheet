@@ -2,6 +2,7 @@
 export interface CellFormat {
   bold?: boolean;
   italic?: boolean;
+  underline?: boolean;
   alignment?: 'left' | 'center' | 'right';
 }
 
@@ -45,4 +46,10 @@ export interface ChartData {
   dataRange: DataRange;
   title: string;
   labels?: DataRange;
+}
+
+// Selection types for multi-cell operations
+export interface CellSelection {
+  startCell: string;
+  endCell: string;
 }

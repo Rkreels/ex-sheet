@@ -7,7 +7,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Copy, Cut, Paste, Delete, Move } from "lucide-react";
+import { Copy, Scissors, ClipboardPaste, Trash, MoveIcon } from "lucide-react";
 
 interface CellContextMenuProps {
   children: React.ReactNode;
@@ -37,20 +37,20 @@ const CellContextMenu: React.FC<CellContextMenuProps> = ({
           <span>Copy</span>
         </ContextMenuItem>
         <ContextMenuItem onClick={onCut}>
-          <Cut className="mr-2 h-4 w-4" />
+          <Scissors className="mr-2 h-4 w-4" />
           <span>Cut</span>
         </ContextMenuItem>
         <ContextMenuItem onClick={onPaste}>
-          <Paste className="mr-2 h-4 w-4" />
+          <ClipboardPaste className="mr-2 h-4 w-4" />
           <span>Paste</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={onDelete}>
-          <Delete className="mr-2 h-4 w-4" />
+          <Trash className="mr-2 h-4 w-4" />
           <span>Delete</span>
         </ContextMenuItem>
         <ContextMenuItem onClick={onMove}>
-          <Move className="mr-2 h-4 w-4" />
+          <MoveIcon className="mr-2 h-4 w-4" />
           <span>Move</span>
         </ContextMenuItem>
       </ContextMenuContent>

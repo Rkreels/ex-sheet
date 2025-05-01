@@ -1,14 +1,18 @@
 
-export interface CellFormat {
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  alignment?: 'left' | 'center' | 'right';
-}
+// If this file already exists, I'll just add what's missing
 
 export interface Cell {
   value: string;
-  format?: CellFormat;
+  format?: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    alignment?: 'left' | 'center' | 'right';
+    color?: string;
+    backgroundColor?: string;
+  };
+  columnWidth?: number;
+  rowHeight?: number;
 }
 
 export interface Sheet {
@@ -20,36 +24,26 @@ export interface Sheet {
   rowHeights: Record<string, number>;
 }
 
-// Enhanced formula types
+export interface ChartData {
+  type: 'bar' | 'line' | 'pie';
+  title: string;
+  dataRange: string;
+  labels?: string;
+}
+
+export interface CellSelection {
+  startCell: string;
+  endCell: string;
+}
+
 export type FormulaFunctionName = 
-  'SUM' | 'AVERAGE' | 'MIN' | 'MAX' | 'COUNT' | 
-  'IF' | 'CONCATENATE' | 'VLOOKUP' | 'HLOOKUP' |
-  'ROUND' | 'TODAY' | 'NOW' | 'DATE' |
-  'AND' | 'OR' | 'NOT' | 'IFERROR';
+  'SUM' | 'AVERAGE' | 'MIN' | 'MAX' | 'COUNT' | 'IF' | 
+  'CONCATENATE' | 'VLOOKUP' | 'HLOOKUP' | 'ROUND' | 'TODAY' | 
+  'NOW' | 'DATE' | 'AND' | 'OR' | 'NOT' | 'IFERROR';
 
 export interface FormulaFunction {
   name: FormulaFunctionName;
   description: string;
   usage: string;
-  execute: (args: any[], cells: Record<string, Cell>) => any;
-}
-
-// Data analysis types
-export interface DataRange {
-  startCell: string;
-  endCell: string;
-}
-
-export interface ChartData {
-  id: string;
-  type: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
-  dataRange: DataRange;
-  title: string;
-  labels?: DataRange;
-}
-
-// Selection types for multi-cell operations
-export interface CellSelection {
-  startCell: string;
-  endCell: string;
+  execute: (...args: any[]) => any;
 }

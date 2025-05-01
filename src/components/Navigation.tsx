@@ -15,7 +15,7 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
   const handleDemoData = () => {
     const demoData = generateDemoData();
     onLoadDemoData(demoData);
-    voiceAssistant.announceDemoData();
+    voiceAssistant.speak("Demo data loaded. Try creating a chart or sorting data.");
   };
 
   const handleToggleMute = () => {
@@ -24,10 +24,11 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-background border-b">
+    <div className="flex items-center gap-2 p-2 bg-gray-100 border-b">
       <Button
         variant="outline"
         onClick={handleDemoData}
+        data-voice-hover="Click here to load demo data for practice"
       >
         Load Demo Data
       </Button>
@@ -35,6 +36,7 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
         variant="ghost"
         size="icon"
         onClick={handleToggleMute}
+        data-voice-hover={isMuted ? "Click to unmute voice assistant" : "Click to mute voice assistant"}
       >
         {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
       </Button>
@@ -43,4 +45,3 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
 };
 
 export default Navigation;
-

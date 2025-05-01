@@ -4,8 +4,8 @@ import { Cell } from "../types/sheet";
 export function generateDemoData(): Record<string, Cell> {
   const demoData: Record<string, Cell> = {};
   
-  // Sales Data
-  const headers = ["Product", "Category", "Q1 Sales", "Q2 Sales", "Q3 Sales", "Q4 Sales", "Total"];
+  // Basic headers like in the Excel image
+  const headers = ["Date", "What is it", "How much?", "Category", "Notes"];
   headers.forEach((header, index) => {
     demoData[`${String.fromCharCode(65 + index)}1`] = {
       value: header,
@@ -13,46 +13,58 @@ export function generateDemoData(): Record<string, Cell> {
     };
   });
 
-  const products = [
-    ["Laptop", "Electronics", "1200", "1500", "1800", "2100"],
-    ["Smartphone", "Electronics", "2500", "2800", "3000", "3500"],
-    ["Coffee Maker", "Appliances", "500", "600", "550", "700"],
-    ["Headphones", "Electronics", "800", "900", "1000", "1200"],
-    ["Tablet", "Electronics", "1500", "1600", "1700", "1900"],
-    ["Monitor", "Electronics", "900", "1000", "1100", "1300"],
-    ["Keyboard", "Accessories", "300", "350", "400", "450"],
-    ["Mouse", "Accessories", "200", "250", "300", "350"],
-    ["Printer", "Electronics", "600", "700", "800", "900"],
-    ["Speaker", "Electronics", "400", "500", "600", "700"]
+  // Sample personal expense data
+  const expenses = [
+    ["2023-01-15", "Groceries", "120.50", "Food", "Weekly shopping"],
+    ["2023-01-18", "Electricity Bill", "85.20", "Utilities", "January bill"],
+    ["2023-01-20", "Gasoline", "45.75", "Transportation", "Full tank"],
+    ["2023-01-25", "Restaurant", "65.30", "Food", "Dinner with friends"],
+    ["2023-01-28", "Internet", "59.99", "Utilities", "Monthly subscription"],
+    ["2023-02-01", "Rent", "1200.00", "Housing", "February rent"],
+    ["2023-02-05", "Groceries", "95.45", "Food", "Weekly shopping"],
+    ["2023-02-10", "Movie Tickets", "24.00", "Entertainment", "New release"],
+    ["2023-02-15", "Car Insurance", "110.00", "Insurance", "Monthly premium"],
+    ["2023-02-20", "Gym Membership", "50.00", "Health", "Monthly fee"]
   ];
 
-  products.forEach((product, rowIndex) => {
-    product.forEach((value, colIndex) => {
+  expenses.forEach((expense, rowIndex) => {
+    expense.forEach((value, colIndex) => {
       const cellId = `${String.fromCharCode(65 + colIndex)}${rowIndex + 2}`;
       demoData[cellId] = {
         value: value,
         format: {
-          alignment: colIndex <= 1 ? 'left' : 'right'
+          alignment: colIndex === 0 || colIndex === 3 || colIndex === 4 ? 'left' : 'right'
         }
       };
     });
-
-    // Calculate total
-    const total = product.slice(2).reduce((sum, val) => sum + parseInt(val), 0);
-    const totalCellId = `${String.fromCharCode(65 + 6)}${rowIndex + 2}`;
-    demoData[totalCellId] = {
-      value: `=SUM(C${rowIndex + 2}:F${rowIndex + 2})`,
-      format: { alignment: 'right', bold: true }
-    };
   });
 
-  // Add some formulas for analysis
-  demoData['A12'] = { value: 'Total Sales:', format: { bold: true } };
-  demoData['B12'] = { value: '=SUM(G2:G11)', format: { bold: true, alignment: 'right' } };
+  // Add some analysis formulas at the bottom
+  demoData['B13'] = { value: 'Total Expenses:', format: { bold: true, alignment: 'right' } };
+  demoData['C13'] = { value: '=SUM(C2:C11)', format: { bold: true, alignment: 'right' } };
   
-  demoData['A13'] = { value: 'Average Sales:', format: { bold: true } };
-  demoData['B13'] = { value: '=AVERAGE(G2:G11)', format: { bold: true, alignment: 'right' } };
+  demoData['B14'] = { value: 'Average Expense:', format: { bold: true, alignment: 'right' } };
+  demoData['C14'] = { value: '=AVERAGE(C2:C11)', format: { bold: true, alignment: 'right' } };
+  
+  demoData['B15'] = { value: 'Highest Expense:', format: { bold: true, alignment: 'right' } };
+  demoData['C15'] = { value: '=MAX(C2:C11)', format: { bold: true, alignment: 'right' } };
+
+  // Highlight cells for easier navigation
+  demoData['E2'] = { 
+    value: expenses[0][4],
+    format: { alignment: 'left', bold: true } 
+  };
+
+  // Add column widths for better display
+  for (let i = 0; i < 5; i++) {
+    const columnWidth = i === 0 ? 100 : i === 1 ? 150 : i === 2 ? 100 : i === 3 ? 120 : 200;
+    for (let j = 1; j <= 15; j++) {
+      const cellId = `${String.fromCharCode(65 + i)}${j}`;
+      if (demoData[cellId]) {
+        demoData[cellId].columnWidth = columnWidth;
+      }
+    }
+  }
 
   return demoData;
 }
-

@@ -24,11 +24,16 @@ export interface Sheet {
   rowHeights: Record<string, number>;
 }
 
+export interface CellRange {
+  startCell: string;
+  endCell: string;
+}
+
 export interface ChartData {
   type: 'bar' | 'line' | 'pie';
   title: string;
-  dataRange: string;
-  labels?: string;
+  dataRange: CellRange;
+  labels?: CellRange;
 }
 
 export interface CellSelection {

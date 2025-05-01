@@ -24,17 +24,29 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-gray-100 border-b">
+    <div className="flex items-center p-1 bg-gray-200 border-b border-gray-300">
+      <img 
+        src="https://upload.wikimedia.org/wikipedia/commons/3/34/Microsoft_Office_Excel_%282019%E2%80%93present%29.svg" 
+        alt="Excel Logo" 
+        className="h-6 w-6 mr-2" 
+      />
+      
+      <div className="border-l border-gray-300 h-6 mx-2"></div>
+      
       <Button
         variant="outline"
+        size="sm"
         onClick={handleDemoData}
+        className="text-xs"
         data-voice-hover="Click here to load demo data for practice"
       >
         Load Demo Data
       </Button>
+      
       <Button
         variant="ghost"
         size="icon"
+        className="h-7 w-7 ml-2"
         onClick={handleToggleMute}
         data-voice-hover={isMuted ? "Click to unmute voice assistant" : "Click to mute voice assistant"}
       >

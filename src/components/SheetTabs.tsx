@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet } from '../types/sheet';
 
@@ -19,28 +19,48 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
   onAddSheet 
 }) => {
   return (
-    <div className="flex items-center h-9 bg-excel-toolbarBg">
-      <div className="flex">
+    <div className="flex items-center h-7 bg-gray-200 border-t border-gray-300">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-7 w-7 rounded-none"
+        data-voice-hover="Previous sheet"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-7 w-7 rounded-none"
+        data-voice-hover="Next sheet"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+      
+      <div className="flex border-l border-gray-300">
         {sheets.map((sheet) => (
           <div 
             key={sheet.id}
             className={cn(
-              "px-4 h-9 flex items-center border-r border-excel-gridBorder cursor-pointer min-w-[100px] max-w-[200px]",
+              "h-7 flex items-center border-r border-gray-300 cursor-pointer px-3 min-w-[80px] max-w-[120px] text-xs",
               sheet.id === activeSheetId 
-                ? "bg-white border-t-2 border-t-excel-tabSelected" 
-                : "hover:bg-excel-tabHover"
+                ? "bg-white" 
+                : "bg-gray-100 hover:bg-gray-50"
             )}
             onClick={() => onSheetSelect(sheet.id)}
+            data-voice-hover={`Switch to ${sheet.name}`}
           >
             <span className="truncate">{sheet.name}</span>
           </div>
         ))}
       </div>
+      
       <Button 
         variant="ghost" 
         size="icon" 
-        className="h-9 w-9 rounded-none"
+        className="h-7 w-7 rounded-none"
         onClick={onAddSheet}
+        data-voice-hover="Add new sheet"
       >
         <Plus className="h-4 w-4" />
       </Button>

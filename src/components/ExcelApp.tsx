@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import ExcelToolbar from './ExcelToolbar';
+import ExcelRibbon from './ExcelRibbon';
 import Spreadsheet from './Spreadsheet';
 import SheetTabs from './SheetTabs';
 import FormulaBar from './FormulaBar';
 import ChartDialog from './ChartDialog';
 import Navigation from './Navigation';
 import voiceAssistant from '../utils/voiceAssistant';
-import { Sheet, ChartData, FormulaFunctionName, FormulaFunction } from '../types/sheet';
+import { Sheet, ChartData, FormulaFunctionName, FormulaFunction, CellRange, Cell } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { toast } from "sonner";
 
@@ -130,6 +131,8 @@ const ExcelApp = () => {
   const [formulaValue, setFormulaValue] = useState('');
   const [activeChart, setActiveChart] = useState<ChartData | null>(null);
   const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
+  const [cellSelection, setCellSelection] = useState<{startCell: string, endCell: string} | null>(null);
+  const [clipboard, setClipboard] = useState<{cells: Record<string, Cell>, startCell: string} | null>(null);
 
   const activeSheet = sheets.find(sheet => sheet.id === activeSheetId) || sheets[0];
   const activeCell = activeSheet?.activeCell || 'A1';
@@ -166,6 +169,10 @@ const ExcelApp = () => {
     const cellValue = activeSheet.cells[cellId]?.value || '';
     setFormulaValue(cellValue);
     voiceAssistant.speak(`Selected cell ${cellId}`);
+  };
+
+  const handleCellSelectionChange = (selection: {startCell: string, endCell: string} | null) => {
+    setCellSelection(selection);
   };
 
   const handleFormulaChange = (value: string) => {
@@ -365,14 +372,182 @@ const ExcelApp = () => {
     }
   };
 
+  const handleCurrencyFormat = () => {
+    const cellData = activeSheet.cells[activeCell];
+    if (!cellData) return;
+    
+    let value = cellData.value;
+    if (value.startsWith('=')) {
+      const result = evaluateFormula(value.substring(1), activeSheet.cells);
+      const numResult = parseFloat(result);
+      if (!isNaN(numResult)) {
+        const currency = '$' + numResult.toFixed(2);
+        handleCellChange(activeCell, currency);
+      }
+    } else {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        const currency = '$' + numValue.toFixed(2);
+        handleCellChange(activeCell, currency);
+      }
+    }
+  };
+
   const handleCreateChart = (chartData: ChartData) => {
     setActiveChart(chartData);
     setIsChartDialogOpen(true);
     toast.success(`Created ${chartData.type} chart`);
   };
 
-  const handleDataAnalysis = () => {
-    toast.info("Data analysis feature coming soon!");
+  const handleCopy = () => {
+    if (!cellSelection && activeCell) {
+      // Copy single cell
+      const activeCellData = activeSheet.cells[activeCell];
+      if (activeCellData) {
+        const selectedCells: Record<string, Cell> = {
+          [activeCell]: { ...activeCellData }
+        };
+        setClipboard({
+          cells: selectedCells,
+          startCell: activeCell
+        });
+        toast.success("Cell copied to clipboard");
+      }
+    } else if (cellSelection) {
+      // Copy selection
+      const [startCol, startRowStr] = cellSelection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      const [endCol, endRowStr] = cellSelection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!startCol || !startRowStr || !endCol || !endRowStr) return;
+      
+      const startColIdx = startCol.charCodeAt(0) - 65;
+      const startRowIdx = parseInt(startRowStr, 10) - 1;
+      const endColIdx = endCol.charCodeAt(0) - 65;
+      const endRowIdx = parseInt(endRowStr, 10) - 1;
+      
+      const minColIdx = Math.min(startColIdx, endColIdx);
+      const maxColIdx = Math.max(startColIdx, endColIdx);
+      const minRowIdx = Math.min(startRowIdx, endRowIdx);
+      const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+      
+      const selectedCells: Record<string, Cell> = {};
+      
+      for (let row = minRowIdx; row <= maxRowIdx; row++) {
+        for (let col = minColIdx; col <= maxColIdx; col++) {
+          const cellId = `${String.fromCharCode(65 + col)}${row + 1}`;
+          if (activeSheet.cells[cellId]) {
+            selectedCells[cellId] = { ...activeSheet.cells[cellId] };
+          }
+        }
+      }
+      
+      setClipboard({
+        cells: selectedCells,
+        startCell: `${String.fromCharCode(65 + minColIdx)}${minRowIdx + 1}`
+      });
+      
+      toast.success("Cells copied to clipboard");
+    }
+  };
+
+  const handleCut = () => {
+    handleCopy();
+    handleDelete();
+  };
+
+  const handlePaste = () => {
+    if (!clipboard) {
+      toast.error("Nothing to paste");
+      return;
+    }
+    
+    const [targetCol, targetRowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [startCol, startRowStr] = clipboard.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    
+    if (!targetCol || !targetRowStr || !startCol || !startRowStr) return;
+    
+    const targetColIdx = targetCol.charCodeAt(0) - 65;
+    const targetRowIdx = parseInt(targetRowStr, 10) - 1;
+    const startColIdx = startCol.charCodeAt(0) - 65;
+    const startRowIdx = parseInt(startRowStr, 10) - 1;
+    
+    const colOffset = targetColIdx - startColIdx;
+    const rowOffset = targetRowIdx - startRowIdx;
+    
+    const updatedCells = { ...activeSheet.cells };
+    
+    Object.entries(clipboard.cells).forEach(([cellId, cell]) => {
+      const [col, rowStr] = cellId.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!col || !rowStr) return;
+      
+      const colIdx = col.charCodeAt(0) - 65;
+      const rowIdx = parseInt(rowStr, 10) - 1;
+      
+      const newColIdx = colIdx + colOffset;
+      const newRowIdx = rowIdx + rowOffset;
+      
+      const newCellId = `${String.fromCharCode(65 + newColIdx)}${newRowIdx + 1}`;
+      updatedCells[newCellId] = { ...cell };
+    });
+    
+    setSheets(prevSheets => 
+      prevSheets.map(sheet => 
+        sheet.id === activeSheetId 
+          ? { ...sheet, cells: updatedCells }
+          : sheet
+      )
+    );
+    
+    toast.success("Pasted from clipboard");
+  };
+
+  const handleDelete = () => {
+    if (!cellSelection && activeCell) {
+      // Delete single cell
+      handleCellChange(activeCell, '');
+      toast.success("Cell cleared");
+    } else if (cellSelection) {
+      // Delete selection
+      const [startCol, startRowStr] = cellSelection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      const [endCol, endRowStr] = cellSelection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+      
+      if (!startCol || !startRowStr || !endCol || !endRowStr) return;
+      
+      const startColIdx = startCol.charCodeAt(0) - 65;
+      const startRowIdx = parseInt(startRowStr, 10) - 1;
+      const endColIdx = endCol.charCodeAt(0) - 65;
+      const endRowIdx = parseInt(endRowStr, 10) - 1;
+      
+      const minColIdx = Math.min(startColIdx, endColIdx);
+      const maxColIdx = Math.max(startColIdx, endColIdx);
+      const minRowIdx = Math.min(startRowIdx, endRowIdx);
+      const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+      
+      const updatedCells = { ...activeSheet.cells };
+      
+      for (let row = minRowIdx; row <= maxRowIdx; row++) {
+        for (let col = minColIdx; col <= maxColIdx; col++) {
+          const cellId = `${String.fromCharCode(65 + col)}${row + 1}`;
+          if (updatedCells[cellId]) {
+            updatedCells[cellId] = {
+              ...updatedCells[cellId],
+              value: ''
+            };
+          }
+        }
+      }
+      
+      setSheets(prevSheets => 
+        prevSheets.map(sheet => 
+          sheet.id === activeSheetId 
+            ? { ...sheet, cells: updatedCells }
+            : sheet
+        )
+      );
+      
+      toast.success("Cells cleared");
+    }
   };
 
   const handleDemoData = (demoData: Record<string, any>) => {
@@ -384,6 +559,22 @@ const ExcelApp = () => {
       )
     );
     toast.success("Demo data loaded successfully!");
+  };
+
+  const handleMergeCenter = () => {
+    if (!cellSelection) {
+      toast.error("Please select multiple cells to merge");
+      return;
+    }
+
+    const [startCol, startRowStr] = cellSelection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [endCol, endRowStr] = cellSelection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    
+    if (!startCol || !startRowStr || !endCol || !endRowStr) return;
+    
+    // For now, just apply center alignment to the active cell
+    applyAlignment('center');
+    toast.success("Cells merged and centered (visual representation only)");
   };
 
   useEffect(() => {
@@ -400,24 +591,29 @@ const ExcelApp = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <Navigation onLoadDemoData={handleDemoData} />
-      <div className="flex-none bg-excel-toolbarBg border-b border-excel-gridBorder">
-        <ExcelToolbar 
+      <div className="flex-none">
+        <Navigation onLoadDemoData={handleDemoData} />
+      </div>
+      <div className="flex-none">
+        <ExcelRibbon 
           onBoldClick={() => applyFormat('bold')} 
           onItalicClick={() => applyFormat('italic')}
           onUnderlineClick={() => applyFormat('underline')}
           onAlignLeftClick={() => applyAlignment('left')}
           onAlignCenterClick={() => applyAlignment('center')}
           onAlignRightClick={() => applyAlignment('right')}
-          onSortAscClick={handleSortAsc}
-          onSortDescClick={handleSortDesc}
+          onCut={handleCut}
+          onCopy={handleCopy}
+          onPaste={handlePaste}
           onPercentClick={handlePercentFormat}
-          onCreateChart={handleCreateChart}
-          onShowDataAnalysis={handleDataAnalysis}
+          onCurrencyFormat={handleCurrencyFormat}
+          onMergeCenter={handleMergeCenter}
           activeCellFormat={activeSheet?.cells[activeCell]?.format || {}}
         />
       </div>
-      <div className="flex-none h-9">
+      <div className="flex-none h-6 border-b border-gray-300 flex items-center bg-white px-2">
+        <div className="text-sm font-mono">{activeCell}</div>
+        <div className="mx-2">≡</div>
         <FormulaBar 
           value={formulaValue} 
           onChange={handleFormulaChange} 
@@ -431,6 +627,7 @@ const ExcelApp = () => {
           activeCell={activeCell}
           onCellChange={handleCellChange}
           onCellSelect={handleCellSelect}
+          onCellSelectionChange={handleCellSelectionChange}
           columnWidths={activeSheet?.columnWidths || {}}
           rowHeights={activeSheet?.rowHeights || {}}
         />

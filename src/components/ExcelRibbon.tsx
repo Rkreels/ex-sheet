@@ -17,8 +17,12 @@ import {
   DollarSign,
   Trash,
   ArrowDownAZ,
-  ArrowUpAZ
+  ArrowUpAZ,
+  Undo,
+  Redo,
+  Printer
 } from 'lucide-react';
+import { ChartData } from '../types/sheet';
 
 interface ExcelRibbonProps {
   onBoldClick: () => void;
@@ -42,6 +46,10 @@ interface ExcelRibbonProps {
   onDelete?: () => void;
   onSortAsc?: () => void;
   onSortDesc?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onPrint?: () => void;
+  onCreateChart?: (chartData: ChartData) => void;
   activeCellFormat: {
     bold?: boolean;
     italic?: boolean;
@@ -76,6 +84,10 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   onDelete = () => {},
   onSortAsc = () => {},
   onSortDesc = () => {},
+  onUndo = () => {},
+  onRedo = () => {},
+  onPrint = () => {},
+  onCreateChart = () => {},
   activeCellFormat 
 }) => {
   return (
@@ -84,7 +96,7 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
         {/* Top row with tabs */}
         
         {/* Main ribbon content */}
-        <div className="flex flex-wrap bg-gray-100">
+        <div className="flex flex-wrap bg-gray-100 overflow-x-auto">
           {/* Clipboard section */}
           <div className="ribbon-section border-r border-gray-300 p-1">
             <div className="text-xs text-center font-semibold mb-1">Clipboard</div>
@@ -341,7 +353,7 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
           </div>
           
           {/* Editing section */}
-          <div className="ribbon-section p-1">
+          <div className="ribbon-section p-1 border-r border-gray-300">
             <div className="text-xs text-center font-semibold mb-1">Editing</div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className="h-10 w-10 flex flex-col items-center" data-voice-hover="AutoSum">
@@ -384,6 +396,45 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
               <Button variant="ghost" size="sm" className="h-10 w-10 flex flex-col items-center" data-voice-hover="Find and select">
                 <span className="text-[10px]">Find &</span>
                 <span className="text-[10px]">Select</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* History section */}
+          <div className="ribbon-section p-1">
+            <div className="text-xs text-center font-semibold mb-1">History</div>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-10 w-10 flex flex-col items-center" 
+                onClick={onUndo}
+                data-voice-hover="Undo"
+              >
+                <Undo className="h-4 w-4" />
+                <span className="text-[10px]">Undo</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-10 w-10 flex flex-col items-center"
+                onClick={onRedo}
+                data-voice-hover="Redo"
+              >
+                <Redo className="h-4 w-4" />
+                <span className="text-[10px]">Redo</span>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-10 w-10 flex flex-col items-center"
+                onClick={onPrint}
+                data-voice-hover="Print"
+              >
+                <Printer className="h-4 w-4" />
+                <span className="text-[10px]">Print</span>
               </Button>
             </div>
           </div>

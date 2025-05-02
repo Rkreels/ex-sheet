@@ -64,3 +64,13 @@ export interface UndoRedoState {
   past: Array<{cells: Record<string, Cell>}>;
   future: Array<{cells: Record<string, Cell>}>;
 }
+
+export interface ColDragEvent {
+  sourceIndex: number;
+  targetIndex: number;
+}
+
+export interface RowDragEvent {
+  sourceIndex: number;
+  targetIndex: number;
+}

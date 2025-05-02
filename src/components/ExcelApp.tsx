@@ -1,16 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChartData } from '../types/sheet';
-import ExcelRibbon from './ExcelRibbon';
 import Navigation from './Navigation';
-import FormulaBar from './FormulaBar';
 import SheetTabs from './SheetTabs';
-import SpreadsheetContainer from './SpreadsheetContainer';
 import ChartDialog from './ChartDialog';
 import { useSheetState } from '../hooks/useSheetState';
 import { useCellOperations } from '../hooks/useCellOperations';
 import { toast } from "sonner";
-import { formulaFunctions } from '../utils/formulaFunctions';
+import RibbonContainer from './RibbonContainer';
+import SpreadsheetArea from './SpreadsheetArea';
 
 const ExcelApp = () => {
   const {
@@ -52,7 +50,9 @@ const ExcelApp = () => {
     handleMergeCenter,
     updateColumnWidth,
     updateRowHeight,
-    updateCellValue
+    updateCellValue,
+    handleColumnDragDrop,
+    handleRowDragDrop
   } = useCellOperations(
     activeSheet,
     activeSheetId,
@@ -103,59 +103,54 @@ const ExcelApp = () => {
       <div className="flex-none print:hidden">
         <Navigation onLoadDemoData={handleDemoData} />
       </div>
-      <div className="flex-none print:hidden">
-        <ExcelRibbon 
-          onBoldClick={() => applyFormat('bold')} 
-          onItalicClick={() => applyFormat('italic')}
-          onUnderlineClick={() => applyFormat('underline')}
-          onAlignLeftClick={() => applyAlignment('left')}
-          onAlignCenterClick={() => applyAlignment('center')}
-          onAlignRightClick={() => applyAlignment('right')}
-          onCut={handleCut}
-          onCopy={handleCopy}
-          onPaste={handlePaste}
-          onPercentClick={handlePercentFormat}
-          onCurrencyFormat={handleCurrencyFormat}
-          onMergeCenter={handleMergeCenter}
-          activeCellFormat={activeSheet?.cells[activeCell]?.format || {}}
-          onFontSizeChange={handleFontSizeChange}
-          onFontFamilyChange={handleFontFamilyChange}
-          onColorChange={applyColor}
-          onBackgroundColorChange={applyBackgroundColor}
-          onDelete={handleDelete}
-          onSortAsc={handleSortAsc}
-          onSortDesc={handleSortDesc}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onPrint={handlePrint}
-          onCreateChart={handleCreateChart}
-        />
-      </div>
-      <div className="flex-none h-6 border-b border-gray-300 flex items-center bg-white px-2 print:hidden">
-        <div className="text-sm font-mono">{activeCell}</div>
-        <div className="mx-2">≡</div>
-        <FormulaBar 
-          value={formulaValue} 
-          onChange={handleFormulaChange} 
-          cellId={activeCell}
-          formulaFunctions={formulaFunctions}
-        />
-      </div>
-      <div className="flex-grow overflow-hidden">
-        <SpreadsheetContainer 
-          sheet={activeSheet}
-          onCellChange={handleCellChange}
-          onCellSelect={handleCellSelect}
-          onCellSelectionChange={handleCellSelectionChange}
-          onColumnWidthChange={updateColumnWidth}
-          onRowHeightChange={updateRowHeight}
-          onCopy={handleCopy}
-          onCut={handleCut}
-          onPaste={handlePaste}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-        />
-      </div>
+      
+      <RibbonContainer 
+        onBoldClick={() => applyFormat('bold')} 
+        onItalicClick={() => applyFormat('italic')}
+        onUnderlineClick={() => applyFormat('underline')}
+        onAlignLeftClick={() => applyAlignment('left')}
+        onAlignCenterClick={() => applyAlignment('center')}
+        onAlignRightClick={() => applyAlignment('right')}
+        onCut={handleCut}
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        onPercentClick={handlePercentFormat}
+        onCurrencyFormat={handleCurrencyFormat}
+        onMergeCenter={handleMergeCenter}
+        activeCellFormat={activeSheet?.cells[activeCell]?.format || {}}
+        onFontSizeChange={handleFontSizeChange}
+        onFontFamilyChange={handleFontFamilyChange}
+        onColorChange={applyColor}
+        onBackgroundColorChange={applyBackgroundColor}
+        onDelete={handleDelete}
+        onSortAsc={handleSortAsc}
+        onSortDesc={handleSortDesc}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onPrint={handlePrint}
+        onCreateChart={handleCreateChart}
+      />
+      
+      <SpreadsheetArea 
+        activeSheet={activeSheet}
+        activeCell={activeCell}
+        formulaValue={formulaValue}
+        cellSelection={cellSelection}
+        handleCellChange={handleCellChange}
+        handleCellSelect={handleCellSelect}
+        handleCellSelectionChange={handleCellSelectionChange}
+        handleFormulaChange={handleFormulaChange}
+        updateColumnWidth={updateColumnWidth}
+        updateRowHeight={updateRowHeight}
+        handleCopy={handleCopy}
+        handleCut={handleCut}
+        handlePaste={handlePaste}
+        handleUndo={handleUndo}
+        handleRedo={handleRedo}
+        handleColumnDragDrop={handleColumnDragDrop}
+        handleRowDragDrop={handleRowDragDrop}
+      />
+      
       <div className="flex-none border-t border-excel-gridBorder print:hidden">
         <SheetTabs 
           sheets={sheets} 

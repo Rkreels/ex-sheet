@@ -16,10 +16,57 @@ const App = () => {
     // Initialize voice assistant
     voiceAssistant.bindHoverSpeak();
     
-    // Welcome message
+    // Add print-specific styles
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        .spreadsheet-container, .spreadsheet-container * {
+          visibility: visible;
+        }
+        .spreadsheet-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+      }
+      
+      @media (max-width: 640px) {
+        .responsive-hidden {
+          display: none;
+        }
+        .responsive-compact {
+          padding: 4px !important;
+          font-size: 0.75rem !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Welcome message with responsive info
     setTimeout(() => {
-      voiceAssistant.speak("Welcome to Excel Online. Use the keyboard to navigate and edit cells.");
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        voiceAssistant.speak("Welcome to Excel Online mobile version. Use the menu button for formatting options.");
+      } else {
+        voiceAssistant.speak("Welcome to Excel Online. Use the keyboard to navigate and edit cells.");
+      }
     }, 1000);
+    
+    // Add responsive listener
+    const handleResize = () => {
+      document.body.classList.toggle('mobile-view', window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   return (

@@ -24,6 +24,10 @@ export interface Sheet {
   activeCell: string;
   columnWidths: Record<string, number>;
   rowHeights: Record<string, number>;
+  history?: {
+    past: Array<{cells: Record<string, Cell>}>;
+    future: Array<{cells: Record<string, Cell>}>;
+  };
 }
 
 export interface CellRange {
@@ -32,7 +36,7 @@ export interface CellRange {
 }
 
 export interface ChartData {
-  id?: string; // Making id optional to fix the error
+  id?: string; 
   type: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
   title: string;
   dataRange: CellRange;
@@ -54,4 +58,9 @@ export interface FormulaFunction {
   description: string;
   usage: string;
   execute: (...args: any[]) => any;
+}
+
+export interface UndoRedoState {
+  past: Array<{cells: Record<string, Cell>}>;
+  future: Array<{cells: Record<string, Cell>}>;
 }

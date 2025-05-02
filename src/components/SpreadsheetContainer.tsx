@@ -11,6 +11,11 @@ interface SpreadsheetContainerProps {
   onCellSelectionChange: (selection: CellSelection | null) => void;
   onColumnWidthChange: (columnId: string, width: number) => void;
   onRowHeightChange: (rowId: number, height: number) => void;
+  onCopy?: () => void;
+  onCut?: () => void;
+  onPaste?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
@@ -19,10 +24,23 @@ const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
   onCellSelect,
   onCellSelectionChange,
   onColumnWidthChange,
-  onRowHeightChange
+  onRowHeightChange,
+  onCopy,
+  onCut,
+  onPaste,
+  onUndo,
+  onRedo
 }) => {
-  // Initialize hotkeys for keyboard navigation
-  useHotkeys();
+  // Initialize hotkeys for keyboard navigation with all callbacks
+  useHotkeys(
+    sheet?.activeCell || 'A1',
+    onCellSelect,
+    onCopy,
+    onCut,
+    onPaste,
+    onUndo,
+    onRedo
+  );
 
   return (
     <div className="w-full h-full overflow-auto bg-white">

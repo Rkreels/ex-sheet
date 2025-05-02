@@ -10,8 +10,6 @@ import ChartDialog from './ChartDialog';
 import { useSheetState } from '../hooks/useSheetState';
 import { useCellOperations } from '../hooks/useCellOperations';
 import { toast } from "sonner";
-
-// Formula function definitions
 import { formulaFunctions } from '../utils/formulaFunctions';
 
 const ExcelApp = () => {
@@ -31,6 +29,8 @@ const ExcelApp = () => {
     addNewSheet,
     handleSheetSelect,
     handleDemoData,
+    handleUndo,
+    handleRedo,
     setSheets
   } = useSheetState();
 
@@ -66,58 +66,7 @@ const ExcelApp = () => {
   const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
   const [activeChart, setActiveChart] = useState<ChartData | null>(null);
   const [showDataAnalysis, setShowDataAnalysis] = useState(false);
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if control or command key is pressed
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        switch (e.key.toLowerCase()) {
-          case 'c': 
-            e.preventDefault();
-            handleCopy();
-            break;
-          case 'x':
-            e.preventDefault();
-            handleCut();
-            break;
-          case 'v':
-            e.preventDefault();
-            handlePaste();
-            break;
-          case 'b':
-            e.preventDefault();
-            applyFormat('bold');
-            break;
-          case 'i':
-            e.preventDefault();
-            applyFormat('italic');
-            break;
-          case 'u':
-            e.preventDefault();
-            applyFormat('underline');
-            break;
-          case 'z':
-            e.preventDefault();
-            toast.info("Undo functionality");
-            break;
-          case 'y':
-            e.preventDefault();
-            toast.info("Redo functionality");
-            break;
-          case 's':
-            e.preventDefault();
-            toast.success("Spreadsheet saved");
-            break;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleCopy, handleCut, handlePaste, applyFormat]);
+  const [isPrintMode, setIsPrintMode] = useState(false);
 
   const handleCreateChart = (chartData: ChartData) => {
     setActiveChart(chartData);
@@ -141,12 +90,20 @@ const ExcelApp = () => {
     toast.success(`Font family set to ${font}`);
   };
 
+  const handlePrint = () => {
+    setIsPrintMode(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrintMode(false);
+    }, 300);
+  };
+
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex-none">
+    <div className={`w-full h-full flex flex-col ${isPrintMode ? 'print-mode' : ''}`}>
+      <div className="flex-none print:hidden">
         <Navigation onLoadDemoData={handleDemoData} />
       </div>
-      <div className="flex-none">
+      <div className="flex-none print:hidden">
         <ExcelRibbon 
           onBoldClick={() => applyFormat('bold')} 
           onItalicClick={() => applyFormat('italic')}
@@ -168,9 +125,13 @@ const ExcelApp = () => {
           onDelete={handleDelete}
           onSortAsc={handleSortAsc}
           onSortDesc={handleSortDesc}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onPrint={handlePrint}
+          onCreateChart={handleCreateChart}
         />
       </div>
-      <div className="flex-none h-6 border-b border-gray-300 flex items-center bg-white px-2">
+      <div className="flex-none h-6 border-b border-gray-300 flex items-center bg-white px-2 print:hidden">
         <div className="text-sm font-mono">{activeCell}</div>
         <div className="mx-2">≡</div>
         <FormulaBar 
@@ -188,9 +149,14 @@ const ExcelApp = () => {
           onCellSelectionChange={handleCellSelectionChange}
           onColumnWidthChange={updateColumnWidth}
           onRowHeightChange={updateRowHeight}
+          onCopy={handleCopy}
+          onCut={handleCut}
+          onPaste={handlePaste}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
         />
       </div>
-      <div className="flex-none border-t border-excel-gridBorder">
+      <div className="flex-none border-t border-excel-gridBorder print:hidden">
         <SheetTabs 
           sheets={sheets} 
           activeSheetId={activeSheetId}

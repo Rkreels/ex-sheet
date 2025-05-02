@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,4 +99,57 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .excel-ribbon {
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+  
+  .excel-ribbon-group {
+    flex: 0 0 auto;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .print-mode .spreadsheet-container {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  .print-hidden {
+    display: none !important;
+  }
+}
+
+/* Excel-specific styles */
+.excel-cell-selected {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+.cell-drag-over {
+  box-shadow: inset 0 0 0 2px #4285F4;
+}
+
+.row-header-selected, .col-header-selected {
+  background-color: #E8F0FE;
+}
+
+/* Animation for cell changes */
+@keyframes cell-updated {
+  0% { background-color: rgba(255, 251, 0, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.cell-updated {
+  animation: cell-updated 1s ease-out;
 }

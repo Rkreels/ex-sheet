@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChartData } from '../types/sheet';
+import { ChartData, NumberFormat } from '../types/sheet';
 import Navigation from './Navigation';
 import SheetTabs from './SheetTabs';
 import ChartDialog from './ChartDialog';
@@ -39,6 +39,7 @@ const ExcelApp = () => {
     applyFontFamily,
     applyColor,
     applyBackgroundColor,
+    applyNumberFormat,
     handleSortAsc,
     handleSortDesc,
     handlePercentFormat,
@@ -46,8 +47,14 @@ const ExcelApp = () => {
     handleCopy,
     handleCut,
     handlePaste,
+    handleFormatPainter,
     handleDelete,
     handleMergeCenter,
+    handleAutoSum,
+    handleFill,
+    handleClearFormatting,
+    handleFind,
+    handleInsert,
     updateColumnWidth,
     updateRowHeight,
     updateCellValue,
@@ -114,6 +121,7 @@ const ExcelApp = () => {
         onCut={handleCut}
         onCopy={handleCopy}
         onPaste={handlePaste}
+        onFormatPainter={handleFormatPainter}
         onPercentClick={handlePercentFormat}
         onCurrencyFormat={handleCurrencyFormat}
         onMergeCenter={handleMergeCenter}
@@ -129,6 +137,12 @@ const ExcelApp = () => {
         onRedo={handleRedo}
         onPrint={handlePrint}
         onCreateChart={handleCreateChart}
+        onNumberFormatChange={applyNumberFormat}
+        onAutoSum={handleAutoSum}
+        onFill={(direction) => handleFill(direction)}
+        onClearFormatting={handleClearFormatting} 
+        onFind={handleFind}
+        onInsert={handleInsert}
       />
       
       <SpreadsheetArea 

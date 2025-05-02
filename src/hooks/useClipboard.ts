@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Sheet, Cell } from '../types/sheet';
 import { toast } from 'sonner';
@@ -12,6 +11,9 @@ export const useClipboard = (
   setClipboard: React.Dispatch<React.SetStateAction<{ cells: Record<string, Cell>, startCell: string } | null>>,
   setSheets: React.Dispatch<React.SetStateAction<Sheet[]>>
 ) => {
+  // Keep track of the format painter source
+  const [formatPainterSource, setFormatPainterSource] = useState<string | null>(null);
+
   const handleCopy = () => {
     if (!cellSelection && activeCell) {
       // Copy single cell
@@ -63,6 +65,76 @@ export const useClipboard = (
     }
   };
 
+  const handleFormatPainter = () => {
+    if (!activeCell) {
+      toast.error("Select a cell first");
+      return;
+    }
+
+    const activeCellData = activeSheet.cells[activeCell];
+    if (!activeCellData || !activeCellData.format) {
+      toast.error("No formatting to copy");
+      return;
+    }
+
+    // Store the active cell for format painter
+    setFormatPainterSource(activeCell);
+    toast.success("Format copied. Click on another cell to apply.");
+    
+    // Change cursor to indicate format painter is active
+    document.body.style.cursor = 'cell';
+
+    // Add one-time event listener for next cell click
+    const handleNextCellClick = (e: MouseEvent) => {
+      // Find if click was on a cell
+      const cellElements = document.querySelectorAll('.border-excel-gridBorder');
+      let targetCellId = null;
+      
+      cellElements.forEach((cell) => {
+        if ((cell as HTMLElement).contains(e.target as Node)) {
+          // Extract cell ID from data attribute or some other means
+          const cellId = (cell as HTMLElement).dataset.cellId;
+          if (cellId) targetCellId = cellId;
+        }
+      });
+      
+      if (targetCellId) {
+        applyFormatToCells([targetCellId], activeCellData.format);
+        toast.success("Format applied");
+      }
+      
+      document.body.style.cursor = 'default';
+      document.removeEventListener('click', handleNextCellClick);
+    };
+    
+    document.addEventListener('click', handleNextCellClick, { once: true });
+  };
+
+  const applyFormatToCells = (cellIds: string[], format: any) => {
+    setSheets(prevSheets => 
+      prevSheets.map(sheet => 
+        sheet.id === activeSheetId 
+          ? {
+              ...sheet,
+              cells: {
+                ...sheet.cells,
+                ...cellIds.reduce((acc, cellId) => {
+                  acc[cellId] = {
+                    ...sheet.cells[cellId] || { value: '' },
+                    format: {
+                      ...sheet.cells[cellId]?.format,
+                      ...format
+                    }
+                  };
+                  return acc;
+                }, {} as Record<string, Cell>)
+              }
+            }
+          : sheet
+      )
+    );
+  };
+
   const handleCut = () => {
     handleCopy();
     handleDelete();
@@ -104,10 +176,20 @@ export const useClipboard = (
       updatedCells[newCellId] = { ...cell };
     });
     
+    // Save state for undo
+    const previousState = { ...activeSheet.cells };
+    
     setSheets(prevSheets => 
       prevSheets.map(sheet => 
         sheet.id === activeSheetId 
-          ? { ...sheet, cells: updatedCells }
+          ? { 
+              ...sheet, 
+              cells: updatedCells,
+              history: {
+                past: [...(sheet.history?.past || []), { cells: previousState }],
+                future: []
+              }
+            }
           : sheet
       )
     );
@@ -137,6 +219,9 @@ export const useClipboard = (
       const minRowIdx = Math.min(startRowIdx, endRowIdx);
       const maxRowIdx = Math.max(startRowIdx, endRowIdx);
       
+      // Save state for undo
+      const previousState = { ...activeSheet.cells };
+      
       const updatedCells = { ...activeSheet.cells };
       
       for (let row = minRowIdx; row <= maxRowIdx; row++) {
@@ -154,7 +239,14 @@ export const useClipboard = (
       setSheets(prevSheets => 
         prevSheets.map(sheet => 
           sheet.id === activeSheetId 
-            ? { ...sheet, cells: updatedCells }
+            ? { 
+                ...sheet, 
+                cells: updatedCells,
+                history: {
+                  past: [...(sheet.history?.past || []), { cells: previousState }],
+                  future: []
+                }
+              }
             : sheet
         )
       );
@@ -164,6 +256,9 @@ export const useClipboard = (
   };
 
   const updateCellValue = (cellId: string, value: string) => {
+    // Save state for undo
+    const previousState = { ...activeSheet.cells };
+    
     setSheets(prevSheets => 
       prevSheets.map(sheet => 
         sheet.id === activeSheetId 
@@ -175,6 +270,10 @@ export const useClipboard = (
                   ...sheet.cells[cellId] || {},
                   value
                 }
+              },
+              history: {
+                past: [...(sheet.history?.past || []), { cells: previousState }],
+                future: []
               }
             }
           : sheet
@@ -186,6 +285,7 @@ export const useClipboard = (
     handleCopy,
     handleCut,
     handlePaste,
+    handleFormatPainter,
     handleDelete,
     updateCellValue
   };

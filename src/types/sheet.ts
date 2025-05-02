@@ -1,6 +1,4 @@
 
-// If this file already exists, I'll just add what's missing
-
 export interface Cell {
   value: string;
   format?: {
@@ -12,6 +10,7 @@ export interface Cell {
     backgroundColor?: string;
     fontSize?: string;
     fontFamily?: string;
+    numberFormat?: 'general' | 'number' | 'currency' | 'percentage' | 'date' | 'time' | 'fraction' | 'scientific' | 'text';
   };
   columnWidth?: number;
   rowHeight?: number;
@@ -74,3 +73,5 @@ export interface RowDragEvent {
   sourceIndex: number;
   targetIndex: number;
 }
+
+export type NumberFormat = 'general' | 'number' | 'currency' | 'percentage' | 'date' | 'time' | 'fraction' | 'scientific' | 'text';

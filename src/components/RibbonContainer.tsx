@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ExcelRibbon from './ExcelRibbon';
-import { ChartData } from '../types/sheet';
+import { ChartData, NumberFormat } from '../types/sheet';
 
 interface RibbonContainerProps {
   onBoldClick: () => void;
@@ -13,6 +13,7 @@ interface RibbonContainerProps {
   onCut: () => void;
   onCopy: () => void;
   onPaste: () => void;
+  onFormatPainter: () => void;
   onPercentClick: () => void;
   onCurrencyFormat: () => void;
   onMergeCenter: () => void;
@@ -28,6 +29,12 @@ interface RibbonContainerProps {
   onRedo: () => void;
   onPrint: () => void;
   onCreateChart: (chartData: ChartData) => void;
+  onNumberFormatChange?: (format: NumberFormat) => void;
+  onAutoSum?: () => void;
+  onFill?: (direction: 'down' | 'right') => void;
+  onClearFormatting?: () => void;
+  onFind?: () => void;
+  onInsert?: (type: 'cell' | 'row' | 'column') => void;
 }
 
 const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
@@ -43,6 +50,7 @@ const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
         onCut={props.onCut}
         onCopy={props.onCopy}
         onPaste={props.onPaste}
+        onFormatPainter={props.onFormatPainter}
         onPercentClick={props.onPercentClick}
         onCurrencyFormat={props.onCurrencyFormat}
         onMergeCenter={props.onMergeCenter}
@@ -58,6 +66,12 @@ const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
         onRedo={props.onRedo}
         onPrint={props.onPrint}
         onCreateChart={props.onCreateChart}
+        onNumberFormatChange={props.onNumberFormatChange}
+        onAutoSum={props.onAutoSum}
+        onFill={props.onFill}
+        onClearFormatting={props.onClearFormatting}
+        onFind={props.onFind}
+        onInsert={props.onInsert}
       />
     </div>
   );

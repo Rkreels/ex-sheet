@@ -132,6 +132,14 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     onCellDrop(cellId);
   };
 
+  // Handle format painter
+  const handleFormatPainted = () => {
+    // This will be handled by the global format painter handler
+    if (document.body.style.cursor === 'cell') {
+      document.body.style.cursor = 'default';
+    }
+  };
+
   // Get column letter from index
   const getColumnLabel = (index: number) => {
     if (index < 26) {
@@ -146,6 +154,35 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   // Highlight specific columns to match Excel-like styling
   const isColumnE = getColumnLabel(colIndex) === 'E';
   const isRow3 = rowIndex + 1 === 3;
+
+  // Prepare context menu handlers
+  const handleCellCopy = () => {
+    // Trigger copy function via context
+    const copyEvent = new Event('copy-cell') as any;
+    copyEvent.cellId = cellId;
+    document.dispatchEvent(copyEvent);
+  };
+  
+  const handleCellCut = () => {
+    // Trigger cut function via context
+    const cutEvent = new Event('cut-cell') as any;
+    cutEvent.cellId = cellId;
+    document.dispatchEvent(cutEvent);
+  };
+  
+  const handleCellPaste = () => {
+    // Trigger paste function via context
+    const pasteEvent = new Event('paste-cell') as any;
+    pasteEvent.cellId = cellId;
+    document.dispatchEvent(pasteEvent);
+  };
+  
+  const handleCellDelete = () => {
+    // Trigger delete function via context
+    const deleteEvent = new Event('delete-cell') as any;
+    deleteEvent.cellId = cellId;
+    document.dispatchEvent(deleteEvent);
+  };
 
   const cellContent = (
     <div
@@ -174,6 +211,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       draggable={!editing}
       onDragStart={() => onCellDragStart(cellId)} 
       onDragEnd={onCellDragEnd}
+      onClick={handleFormatPainted}
+      data-cell-id={cellId}
     >
       {isActive && editing ? (
         <input
@@ -212,10 +251,10 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
 
   return (
     <CellContextMenu
-      onCopy={() => {}}
-      onCut={() => {}}
-      onPaste={() => {}}
-      onDelete={() => {}}
+      onCopy={handleCellCopy}
+      onCut={handleCellCut}
+      onPaste={handleCellPaste}
+      onDelete={handleCellDelete}
       onMove={() => {}}
     >
       {cellContent}

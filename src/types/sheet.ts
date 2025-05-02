@@ -10,6 +10,8 @@ export interface Cell {
     alignment?: 'left' | 'center' | 'right';
     color?: string;
     backgroundColor?: string;
+    fontSize?: string;
+    fontFamily?: string;
   };
   columnWidth?: number;
   rowHeight?: number;
@@ -30,7 +32,7 @@ export interface CellRange {
 }
 
 export interface ChartData {
-  type: 'bar' | 'line' | 'pie';
+  type: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
   title: string;
   dataRange: CellRange;
   labels?: CellRange;

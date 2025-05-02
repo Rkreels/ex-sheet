@@ -14,7 +14,10 @@ import {
   PercentIcon,
   WrapText,
   MergeIcon,
-  DollarSign
+  DollarSign,
+  Trash,
+  ArrowDownAZ,
+  ArrowUpAZ
 } from 'lucide-react';
 
 interface ExcelRibbonProps {
@@ -32,11 +35,22 @@ interface ExcelRibbonProps {
   onMergeCenter?: () => void;
   onWrapText?: () => void;
   onCurrencyFormat?: () => void;
+  onFontSizeChange?: (size: string) => void;
+  onFontFamilyChange?: (font: string) => void;
+  onColorChange?: (color: string) => void;
+  onBackgroundColorChange?: (color: string) => void;
+  onDelete?: () => void;
+  onSortAsc?: () => void;
+  onSortDesc?: () => void;
   activeCellFormat: {
     bold?: boolean;
     italic?: boolean;
     alignment?: string;
     underline?: boolean;
+    fontSize?: string;
+    fontFamily?: string;
+    color?: string;
+    backgroundColor?: string;
   };
 }
 
@@ -55,6 +69,13 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   onMergeCenter = () => {},
   onWrapText = () => {},
   onCurrencyFormat = () => {},
+  onFontSizeChange = () => {},
+  onFontFamilyChange = () => {},
+  onColorChange = () => {},
+  onBackgroundColorChange = () => {},
+  onDelete = () => {},
+  onSortAsc = () => {},
+  onSortDesc = () => {},
   activeCellFormat 
 }) => {
   return (
@@ -98,16 +119,35 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
             <div className="text-xs text-center font-semibold mb-1">Font</div>
             <div className="flex flex-col gap-1">
               <div className="flex gap-1">
-                <select className="text-xs p-1 border border-gray-300 rounded w-24">
+                <select 
+                  className="text-xs p-1 border border-gray-300 rounded w-24"
+                  value={activeCellFormat.fontFamily || 'Calibri'}
+                  onChange={(e) => onFontFamilyChange(e.target.value)}
+                >
                   <option>Calibri</option>
                   <option>Arial</option>
                   <option>Times New Roman</option>
+                  <option>Courier New</option>
+                  <option>Georgia</option>
+                  <option>Verdana</option>
                 </select>
                 
-                <select className="text-xs p-1 border border-gray-300 rounded w-10">
+                <select 
+                  className="text-xs p-1 border border-gray-300 rounded w-10"
+                  value={activeCellFormat.fontSize || '11'}
+                  onChange={(e) => onFontSizeChange(e.target.value)}
+                >
+                  <option>8</option>
+                  <option>9</option>
+                  <option>10</option>
                   <option>11</option>
                   <option>12</option>
                   <option>14</option>
+                  <option>16</option>
+                  <option>18</option>
+                  <option>20</option>
+                  <option>22</option>
+                  <option>24</option>
                 </select>
               </div>
               
@@ -162,6 +202,32 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
                   data-voice-hover="Percent format"
                 >
                   <PercentIcon className="h-4 w-4" />
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6"
+                  onClick={() => {
+                    const color = prompt('Enter color (e.g. red, #FF0000):', activeCellFormat.color || '#000000');
+                    if (color) onColorChange(color);
+                  }}
+                >
+                  <div className="w-4 h-4 border border-gray-400" style={{backgroundColor: activeCellFormat.color || 'black'}} />
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6"
+                  onClick={() => {
+                    const color = prompt('Enter background color:', activeCellFormat.backgroundColor || '#FFFFFF');
+                    if (color) onBackgroundColorChange(color);
+                  }}
+                >
+                  <div className="w-4 h-4 border border-gray-400 bg-white">
+                    <div className="w-2 h-2" style={{backgroundColor: activeCellFormat.backgroundColor || 'transparent'}} />
+                  </div>
                 </Button>
               </div>
             </div>
@@ -252,9 +318,15 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
                 </div>
               </Button>
               
-              <Button variant="ghost" size="sm" className="h-10 w-10" data-voice-hover="Delete cell">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-10 w-10" 
+                data-voice-hover="Delete cell"
+                onClick={onDelete}
+              >
                 <div className="flex flex-col items-center">
-                  <div className="bg-red-500 h-4 w-4"></div>
+                  <Trash className="h-4 w-4 text-red-500" />
                   <span className="text-[10px]">Delete</span>
                 </div>
               </Button>
@@ -285,10 +357,29 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
                 <span className="text-[10px]">Clear</span>
               </Button>
               
-              <Button variant="ghost" size="sm" className="h-10 w-10 flex flex-col items-center" data-voice-hover="Sort and filter">
-                <span className="text-[10px]">Sort &</span>
-                <span className="text-[10px]">Filter</span>
-              </Button>
+              <div className="h-10 flex flex-col items-center">
+                <div className="flex">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5 flex items-center justify-center p-0"
+                    onClick={onSortAsc}
+                    data-voice-hover="Sort ascending"
+                  >
+                    <ArrowDownAZ className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5 flex items-center justify-center p-0"
+                    onClick={onSortDesc}
+                    data-voice-hover="Sort descending"
+                  >
+                    <ArrowUpAZ className="h-3 w-3" />
+                  </Button>
+                </div>
+                <span className="text-[10px]">Sort</span>
+              </div>
               
               <Button variant="ghost" size="sm" className="h-10 w-10 flex flex-col items-center" data-voice-hover="Find and select">
                 <span className="text-[10px]">Find &</span>

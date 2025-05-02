@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
-import { evaluateFormula } from '../utils/formulaEvaluator';
 import { Cell, CellSelection } from '../types/sheet';
-import CellContextMenu from './CellContextMenu';
+import SpreadsheetHeader from './SpreadsheetHeader';
+import SpreadsheetRow from './SpreadsheetRow';
 
 interface SpreadsheetProps {
   cells: Record<string, Cell>;
@@ -12,6 +12,8 @@ interface SpreadsheetProps {
   onCellSelectionChange?: (selection: {startCell: string, endCell: string} | null) => void;
   columnWidths: Record<string, number>;
   rowHeights: Record<string, number>;
+  onColumnWidthChange: (columnId: string, width: number) => void;
+  onRowHeightChange: (rowId: number, height: number) => void;
 }
 
 const Spreadsheet: React.FC<SpreadsheetProps> = ({ 
@@ -21,7 +23,9 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   onCellSelect,
   onCellSelectionChange,
   columnWidths,
-  rowHeights
+  rowHeights,
+  onColumnWidthChange,
+  onRowHeightChange
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -30,16 +34,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   const [selection, setSelection] = useState<CellSelection | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [draggedCell, setDraggedCell] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Focus input when editing begins
-  useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editing]);
 
   // Notify parent of selection changes
   useEffect(() => {
@@ -129,82 +124,6 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     setEditValue(cells[cellId]?.value || '');
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value);
-  };
-
-  const handleInputBlur = () => {
-    setEditing(false);
-    onCellChange(activeCell, editValue);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setEditing(false);
-      onCellChange(activeCell, editValue);
-      
-      // Move to the cell below
-      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-      if (col && rowStr) {
-        const nextRow = parseInt(rowStr, 10) + 1;
-        if (nextRow <= rows) {
-          onCellSelect(`${col}${nextRow}`);
-        }
-      }
-    } else if (e.key === 'Escape') {
-      setEditing(false);
-      setEditValue(cells[activeCell]?.value || '');
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      setEditing(false);
-      onCellChange(activeCell, editValue);
-      
-      // Move to the next cell (right)
-      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-      if (col && rowStr) {
-        const colIndex = col.charCodeAt(0) - 65;
-        const nextColIndex = e.shiftKey ? colIndex - 1 : colIndex + 1;
-        
-        if (nextColIndex >= 0 && nextColIndex < columns) {
-          const nextCol = String.fromCharCode(65 + nextColIndex);
-          onCellSelect(`${nextCol}${rowStr}`);
-        }
-      }
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-               e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      // Handle arrow key navigation when editing
-      if (editing) return;
-      
-      e.preventDefault();
-      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-      if (!col || !rowStr) return;
-      
-      const colIndex = col.charCodeAt(0) - 65;
-      const rowIndex = parseInt(rowStr, 10) - 1;
-      
-      let nextColIndex = colIndex;
-      let nextRowIndex = rowIndex;
-      
-      switch (e.key) {
-        case 'ArrowUp':
-          nextRowIndex = Math.max(0, rowIndex - 1);
-          break;
-        case 'ArrowDown':
-          nextRowIndex = Math.min(rows - 1, rowIndex + 1);
-          break;
-        case 'ArrowLeft':
-          nextColIndex = Math.max(0, colIndex - 1);
-          break;
-        case 'ArrowRight':
-          nextColIndex = Math.min(columns - 1, colIndex + 1);
-          break;
-      }
-      
-      const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
-      onCellSelect(nextCellId);
-    }
-  };
-
   const handleCellDragStart = (cellId: string) => {
     setDraggedCell(cellId);
     // Set visual drag effect
@@ -257,6 +176,21 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     const maxRowIdx = Math.max(startRowIdx, endRowIdx);
     
     return cellColIdx >= minColIdx && cellColIdx <= maxColIdx && cellRowIdx >= minRowIdx && cellRowIdx <= maxRowIdx;
+  };
+
+  // Column selection handler
+  const handleColumnHeaderClick = (colIndex: number, e: React.MouseEvent) => {
+    const colLetter = getColumnLabel(colIndex);
+    const startCell = `${colLetter}1`;
+    const endCell = `${colLetter}${rows}`;
+    
+    if (e.shiftKey && selection) {
+      // Extend existing selection
+      setSelection({ ...selection, endCell });
+    } else {
+      // New selection
+      setSelection({ startCell, endCell });
+    }
   };
 
   // Keyboard navigation handler
@@ -334,195 +268,43 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [activeCell, editing, rows, selection, onCellSelect]);
 
-  // Column selection handler
-  const handleColumnHeaderClick = (colIndex: number, e: React.MouseEvent) => {
-    const colLetter = getColumnLabel(colIndex);
-    const startCell = `${colLetter}1`;
-    const endCell = `${colLetter}${rows}`;
-    
-    if (e.shiftKey && selection) {
-      // Extend existing selection
-      setSelection({ ...selection, endCell });
-    } else {
-      // New selection
-      setSelection({ startCell, endCell });
-    }
-  };
-
-  // Row selection handler
-  const handleRowHeaderClick = (rowIndex: number, e: React.MouseEvent) => {
-    const startCell = `A${rowIndex + 1}`;
-    const endCell = `${getColumnLabel(columns - 1)}${rowIndex + 1}`;
-    
-    if (e.shiftKey && selection) {
-      // Extend existing selection
-      setSelection({ ...selection, endCell });
-    } else {
-      // New selection
-      setSelection({ startCell, endCell });
-    }
-  };
-
-  const renderCell = (rowIndex: number, colIndex: number) => {
-    const cellId = getCellId(rowIndex, colIndex);
-    const cellData = cells[cellId];
-    const isActive = cellId === activeCell;
-    const isSelected = isCellInSelection(cellId);
-    
-    // Calculate display value (for formulas)
-    let displayValue = '';
-    if (cellData?.value) {
-      if (cellData.value.startsWith('=')) {
-        try {
-          displayValue = evaluateFormula(cellData.value.substring(1), cells);
-        } catch (error) {
-          displayValue = '#ERROR';
-          console.error('Formula evaluation error:', error);
-        }
-      } else {
-        displayValue = cellData.value;
-      }
-    }
-
-    // Highlight specific columns to match the image (column E)
-    const isColumnE = getColumnLabel(colIndex) === 'E';
-    
-    // Highlight specific rows from the image (row 3)
-    const isRow3 = rowIndex + 1 === 3;
-
-    // Get column width
-    const width = columnWidths[getColumnLabel(colIndex)] || 100;
-    
-    // Get row height
-    const height = rowHeights[rowIndex + 1] || 22; // Slightly smaller cells to match Excel
-
-    const cellContent = (
-      <div
-        className={cn(
-          "border-r border-b border-excel-gridBorder relative",
-          isActive && "border border-excel-blue z-10",
-          isSelected && !isActive && "bg-blue-100",
-          isColumnE && "bg-amber-50",
-          isRow3 && "bg-amber-50",
-          !isActive && !isSelected && !isColumnE && !isRow3 && "hover:bg-excel-hoverBg"
-        )}
-        style={{ 
-          width: `${width}px`, 
-          minWidth: `${width}px`,
-          height: `${height}px`,
-          minHeight: `${height}px`,
-        }}
-        onClick={() => handleCellClick(rowIndex, colIndex)}
-        onDoubleClick={() => handleDoubleClick(rowIndex, colIndex)}
-        onMouseDown={(e) => handleCellMouseDown(rowIndex, colIndex, e)}
-        onMouseOver={() => handleCellMouseOver(rowIndex, colIndex)}
-        onDrop={() => handleCellDrop(cellId)}
-        onDragOver={(e) => e.preventDefault()}
-        draggable={!editing}
-        onDragStart={() => handleCellDragStart(cellId)} 
-        onDragEnd={handleCellDragEnd}
-      >
-        {isActive && editing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            className="absolute top-0 left-0 w-full h-full px-1 outline-none"
-            value={editValue}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            onKeyDown={handleInputKeyDown}
-          />
-        ) : (
-          <div 
-            className={cn(
-              "w-full h-full px-1 overflow-hidden text-sm",
-              cellData?.format?.bold && "font-bold",
-              cellData?.format?.italic && "italic",
-              cellData?.format?.underline && "underline",
-              cellData?.format?.alignment === 'left' && "text-left",
-              cellData?.format?.alignment === 'center' && "text-center",
-              cellData?.format?.alignment === 'right' && "text-right",
-              !cellData?.format?.alignment && "text-left"
-            )}
-          >
-            {displayValue}
-          </div>
-        )}
-      </div>
-    );
-
-    return (
-      <CellContextMenu
-        key={`${rowIndex}-${colIndex}`}
-        onCopy={() => {}}
-        onCut={() => {}}
-        onPaste={() => {}}
-        onDelete={() => {}}
-        onMove={() => {}}
-      >
-        {cellContent}
-      </CellContextMenu>
-    );
-  };
-
   return (
     <div 
       className="relative overflow-auto w-full h-full bg-white" 
       ref={containerRef}
       onMouseUp={handleMouseUp}
     >
-      {/* Header row with column labels */}
-      <div className="sticky top-0 z-20 flex">
-        <div 
-          className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex-none"
-          style={{ width: '40px', height: '22px' }}
-        ></div>
-        <div className="flex">
-          {Array.from({ length: columns }, (_, i) => (
-            <div 
-              key={`header-${i}`} 
-              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-xs flex-none cursor-pointer hover:bg-excel-hoverBg"
-              style={{ 
-                width: `${columnWidths[getColumnLabel(i)] || 100}px`, 
-                minWidth: `${columnWidths[getColumnLabel(i)] || 100}px`,
-                height: '22px'
-              }}
-              onClick={(e) => handleColumnHeaderClick(i, e)}
-            >
-              {getColumnLabel(i)}
-            </div>
-          ))}
-        </div>
-      </div>
+      <SpreadsheetHeader 
+        columns={columns}
+        columnWidths={columnWidths}
+        onColumnWidthChange={onColumnWidthChange}
+        onColumnHeaderClick={handleColumnHeaderClick}
+      />
       
-      {/* Main grid content */}
       <div className="flex">
-        {/* Row headers column */}
-        <div className="flex-none">
-          {Array.from({ length: rows }, (_, i) => (
-            <div 
-              key={`row-${i}`} 
-              className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex items-center justify-center text-gray-700 font-medium text-xs cursor-pointer hover:bg-excel-hoverBg"
-              style={{ 
-                width: '40px', 
-                height: `${rowHeights[i + 1] || 22}px`,
-                minHeight: `${rowHeights[i + 1] || 22}px`
-              }}
-              onClick={(e) => handleRowHeaderClick(i, e)}
-            >
-              {i + 1}
-            </div>
-          ))}
-        </div>
-        
         {/* Grid cells */}
         <div>
           {Array.from({ length: rows }, (_, rowIndex) => (
-            <div key={`row-${rowIndex}`} className="flex">
-              {Array.from({ length: columns }, (_, colIndex) => 
-                renderCell(rowIndex, colIndex)
-              )}
-            </div>
+            <SpreadsheetRow
+              key={`row-${rowIndex}`}
+              rowIndex={rowIndex}
+              columns={columns}
+              cells={cells}
+              activeCell={activeCell}
+              selection={selection}
+              columnWidths={columnWidths}
+              rowHeight={rowHeights[rowIndex + 1] || 22}
+              onCellClick={handleCellClick}
+              onDoubleClick={handleDoubleClick}
+              onCellMouseDown={handleCellMouseDown}
+              onCellMouseOver={handleCellMouseOver}
+              onCellDrop={handleCellDrop}
+              onCellDragStart={handleCellDragStart}
+              onCellDragEnd={handleCellDragEnd}
+              onCellValueChange={onCellChange}
+              isCellInSelection={isCellInSelection}
+              onRowHeightChange={onRowHeightChange}
+            />
           ))}
         </div>
       </div>

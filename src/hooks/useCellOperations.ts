@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Sheet, Cell } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
@@ -23,9 +22,9 @@ export const useCellOperations = (
               cells: {
                 ...sheet.cells,
                 [activeCell]: {
-                  ...sheet.cells[activeCell],
+                  ...sheet.cells[activeCell] || { value: '' },
                   format: {
-                    ...sheet.cells[activeCell]?.format,
+                    ...sheet.cells[activeCell]?.format || {},
                     [formatType]: !sheet.cells[activeCell]?.format?.[formatType]
                   }
                 }
@@ -111,9 +110,9 @@ export const useCellOperations = (
               cells: {
                 ...sheet.cells,
                 [activeCell]: {
-                  ...sheet.cells[activeCell],
+                  ...sheet.cells[activeCell] || { value: '' },
                   format: {
-                    ...sheet.cells[activeCell]?.format,
+                    ...sheet.cells[activeCell]?.format || {},
                     color,
                   }
                 }
@@ -133,9 +132,9 @@ export const useCellOperations = (
               cells: {
                 ...sheet.cells,
                 [activeCell]: {
-                  ...sheet.cells[activeCell],
+                  ...sheet.cells[activeCell] || { value: '' },
                   format: {
-                    ...sheet.cells[activeCell]?.format,
+                    ...sheet.cells[activeCell]?.format || {},
                     backgroundColor,
                   }
                 }
@@ -258,15 +257,23 @@ export const useCellOperations = (
 
   const handlePercentFormat = () => {
     const cellData = activeSheet.cells[activeCell];
-    if (!cellData) return;
+    if (!cellData) {
+      // Create empty cell if it doesn't exist
+      updateCellValue(activeCell, '0%');
+      return;
+    }
     
     let value = cellData.value;
     if (value.startsWith('=')) {
-      const result = evaluateFormula(value.substring(1), activeSheet.cells);
-      const numResult = parseFloat(result);
-      if (!isNaN(numResult)) {
-        const percent = (numResult * 100).toFixed(2) + '%';
-        updateCellValue(activeCell, percent);
+      try {
+        const result = evaluateFormula(value.substring(1), activeSheet.cells);
+        const numResult = parseFloat(result);
+        if (!isNaN(numResult)) {
+          const percent = (numResult * 100).toFixed(2) + '%';
+          updateCellValue(activeCell, percent);
+        }
+      } catch (error) {
+        console.error('Error evaluating formula for percent format:', error);
       }
     } else {
       const numValue = parseFloat(value);
@@ -279,17 +286,25 @@ export const useCellOperations = (
 
   const handleCurrencyFormat = () => {
     const cellData = activeSheet.cells[activeCell];
-    if (!cellData) return;
+    if (!cellData) {
+      // Create empty cell if it doesn't exist
+      updateCellValue(activeCell, '$0.00');
+      return;
+    }
     
     let value = cellData.value;
-    if (value.startsWith('=')) {
-      const result = evaluateFormula(value.substring(1), activeSheet.cells);
-      const numResult = parseFloat(result);
-      if (!isNaN(numResult)) {
-        const currency = '$' + numResult.toFixed(2);
-        updateCellValue(activeCell, currency);
+    if (value && value.startsWith('=')) {
+      try {
+        const result = evaluateFormula(value.substring(1), activeSheet.cells);
+        const numResult = parseFloat(result);
+        if (!isNaN(numResult)) {
+          const currency = '$' + numResult.toFixed(2);
+          updateCellValue(activeCell, currency);
+        }
+      } catch (error) {
+        console.error('Error evaluating formula for currency format:', error);
       }
-    } else {
+    } else if (value) {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         const currency = '$' + numValue.toFixed(2);
@@ -474,7 +489,7 @@ export const useCellOperations = (
               cells: {
                 ...sheet.cells,
                 [cellId]: {
-                  ...sheet.cells[cellId],
+                  ...sheet.cells[cellId] || {},
                   value
                 }
               }
@@ -516,10 +531,12 @@ export const useCellOperations = (
     );
   };
 
-  // Formula evaluation effect
+  // Formula evaluation effect - with error handling
   useEffect(() => {
+    if (!activeSheet?.cells) return;
+    
     Object.entries(activeSheet.cells).forEach(([cellId, cell]) => {
-      if (cell.value.startsWith('=')) {
+      if (cell && cell.value && cell.value.startsWith('=')) {
         try {
           evaluateFormula(cell.value.substring(1), activeSheet.cells);
         } catch (error) {
@@ -527,7 +544,7 @@ export const useCellOperations = (
         }
       }
     });
-  }, [activeSheet.cells, activeSheetId]);
+  }, [activeSheet?.cells, activeSheetId]);
 
   return {
     applyFormat,
@@ -546,6 +563,7 @@ export const useCellOperations = (
     handleDelete,
     handleMergeCenter,
     updateColumnWidth,
-    updateRowHeight
+    updateRowHeight,
+    updateCellValue
   };
 };

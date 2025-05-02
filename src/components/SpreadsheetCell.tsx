@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { Cell } from '../types/sheet';
@@ -50,28 +50,37 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
 }) => {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
+  const [displayValue, setDisplayValue] = useState('');
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Focus input when editing starts
+  useEffect(() => {
     if (isActive && editing && inputRef.current) {
       inputRef.current.focus();
+      inputRef.current.select();
     }
   }, [isActive, editing]);
 
-  // Calculate display value (for formulas)
-  let displayValue = '';
-  if (cellData?.value) {
+  // Calculate display value for formulas and update when cells change
+  useEffect(() => {
+    if (!cellData?.value) {
+      setDisplayValue('');
+      return;
+    }
+
     if (cellData.value.startsWith('=')) {
       try {
-        displayValue = evaluateFormula(cellData.value.substring(1), cells);
+        const result = evaluateFormula(cellData.value.substring(1), cells);
+        setDisplayValue(result.toString());
       } catch (error) {
-        displayValue = '#ERROR';
         console.error('Formula evaluation error:', error);
+        setDisplayValue('#ERROR');
       }
     } else {
-      displayValue = cellData.value;
+      setDisplayValue(cellData.value);
     }
-  }
+  }, [cellData, cells]);
 
   // Handle double click to start editing
   const handleDoubleClickInternal = () => {
@@ -92,7 +101,38 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     onCellBlur();
   };
 
-  // Get column label from colIndex
+  // Handle key down events
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setEditing(false);
+      onCellKeyDown(e);
+    } else if (e.key === 'Escape') {
+      setEditing(false);
+      // Restore original value
+      onCellValueChange(cellData?.value || '');
+    } else {
+      onCellKeyDown(e);
+    }
+  };
+
+  // Handle drag over for visual feedback
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  // Handle drop
+  const handleDrop = () => {
+    setDragOver(false);
+    onCellDrop(cellId);
+  };
+
+  // Get column letter from index
   const getColumnLabel = (index: number) => {
     if (index < 26) {
       return String.fromCharCode(65 + index); // A, B, C, ...
@@ -103,10 +143,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     }
   };
 
-  // Highlight specific columns to match the image (column E)
+  // Highlight specific columns to match Excel-like styling
   const isColumnE = getColumnLabel(colIndex) === 'E';
-  
-  // Highlight specific rows from the image (row 3)
   const isRow3 = rowIndex + 1 === 3;
 
   const cellContent = (
@@ -115,9 +153,10 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         "border-r border-b border-excel-gridBorder relative",
         isActive && "border border-excel-blue z-10",
         isSelected && !isActive && "bg-blue-100",
-        isColumnE && "bg-amber-50",
-        isRow3 && "bg-amber-50",
-        !isActive && !isSelected && !isColumnE && !isRow3 && "hover:bg-excel-hoverBg"
+        dragOver && "bg-green-50 border-green-500",
+        isColumnE && !isActive && !isSelected && !dragOver && "bg-amber-50",
+        isRow3 && !isActive && !isSelected && !dragOver && "bg-amber-50",
+        !isActive && !isSelected && !isColumnE && !isRow3 && !dragOver && "hover:bg-excel-hoverBg"
       )}
       style={{ 
         width: `${width}px`, 
@@ -129,8 +168,9 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       onDoubleClick={handleDoubleClickInternal}
       onMouseDown={(e) => onCellMouseDown(rowIndex, colIndex, e)}
       onMouseOver={() => onCellMouseOver(rowIndex, colIndex)}
-      onDrop={() => onCellDrop(cellId)}
-      onDragOver={(e) => e.preventDefault()}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       draggable={!editing}
       onDragStart={() => onCellDragStart(cellId)} 
       onDragEnd={onCellDragEnd}
@@ -143,7 +183,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
           value={editValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          onKeyDown={onCellKeyDown}
+          onKeyDown={handleKeyDown}
         />
       ) : (
         <div 
@@ -158,10 +198,10 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
             !cellData?.format?.alignment && "text-left"
           )}
           style={{
-            color: cellData?.format?.color,
-            backgroundColor: cellData?.format?.backgroundColor,
-            fontFamily: cellData?.format?.fontFamily,
-            fontSize: cellData?.format?.fontSize
+            color: cellData?.format?.color || 'inherit',
+            backgroundColor: cellData?.format?.backgroundColor || 'transparent',
+            fontFamily: cellData?.format?.fontFamily || 'inherit',
+            fontSize: cellData?.format?.fontSize || 'inherit'
           }}
         >
           {displayValue}

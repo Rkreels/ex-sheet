@@ -32,6 +32,7 @@ export interface CellRange {
 }
 
 export interface ChartData {
+  id?: string; // Making id optional to fix the error
   type: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
   title: string;
   dataRange: CellRange;

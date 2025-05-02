@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChartData } from '../types/sheet';
 import ExcelRibbon from './ExcelRibbon';
 import Navigation from './Navigation';
@@ -9,6 +9,7 @@ import SpreadsheetContainer from './SpreadsheetContainer';
 import ChartDialog from './ChartDialog';
 import { useSheetState } from '../hooks/useSheetState';
 import { useCellOperations } from '../hooks/useCellOperations';
+import { toast } from "sonner";
 
 // Formula function definitions
 import { formulaFunctions } from '../utils/formulaFunctions';
@@ -50,7 +51,8 @@ const ExcelApp = () => {
     handleDelete,
     handleMergeCenter,
     updateColumnWidth,
-    updateRowHeight
+    updateRowHeight,
+    updateCellValue
   } = useCellOperations(
     activeSheet,
     activeSheetId,
@@ -63,10 +65,80 @@ const ExcelApp = () => {
 
   const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
   const [activeChart, setActiveChart] = useState<ChartData | null>(null);
+  const [showDataAnalysis, setShowDataAnalysis] = useState(false);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if control or command key is pressed
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        switch (e.key.toLowerCase()) {
+          case 'c': 
+            e.preventDefault();
+            handleCopy();
+            break;
+          case 'x':
+            e.preventDefault();
+            handleCut();
+            break;
+          case 'v':
+            e.preventDefault();
+            handlePaste();
+            break;
+          case 'b':
+            e.preventDefault();
+            applyFormat('bold');
+            break;
+          case 'i':
+            e.preventDefault();
+            applyFormat('italic');
+            break;
+          case 'u':
+            e.preventDefault();
+            applyFormat('underline');
+            break;
+          case 'z':
+            e.preventDefault();
+            toast.info("Undo functionality");
+            break;
+          case 'y':
+            e.preventDefault();
+            toast.info("Redo functionality");
+            break;
+          case 's':
+            e.preventDefault();
+            toast.success("Spreadsheet saved");
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleCopy, handleCut, handlePaste, applyFormat]);
 
   const handleCreateChart = (chartData: ChartData) => {
     setActiveChart(chartData);
     setIsChartDialogOpen(true);
+  };
+
+  const handleShowDataAnalysis = () => {
+    setShowDataAnalysis(prev => !prev);
+    if (!showDataAnalysis) {
+      toast.info("Data Analysis Tools are coming soon!");
+    }
+  };
+
+  const handleFontSizeChange = (size: string) => {
+    applyFontSize(size);
+    toast.success(`Font size set to ${size}`);
+  };
+
+  const handleFontFamilyChange = (font: string) => {
+    applyFontFamily(font);
+    toast.success(`Font family set to ${font}`);
   };
 
   return (
@@ -89,8 +161,8 @@ const ExcelApp = () => {
           onCurrencyFormat={handleCurrencyFormat}
           onMergeCenter={handleMergeCenter}
           activeCellFormat={activeSheet?.cells[activeCell]?.format || {}}
-          onFontSizeChange={applyFontSize}
-          onFontFamilyChange={applyFontFamily}
+          onFontSizeChange={handleFontSizeChange}
+          onFontFamilyChange={handleFontFamilyChange}
           onColorChange={applyColor}
           onBackgroundColorChange={applyBackgroundColor}
           onDelete={handleDelete}

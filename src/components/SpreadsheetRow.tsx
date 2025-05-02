@@ -21,6 +21,7 @@ interface SpreadsheetRowProps {
   onCellValueChange: (cellId: string, value: string) => void;
   isCellInSelection: (cellId: string) => boolean;
   onRowHeightChange: (rowId: number, height: number) => void;
+  onRowHeaderClick: (rowIndex: number, e: React.MouseEvent) => void;
 }
 
 const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
@@ -40,7 +41,8 @@ const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
   onCellDragEnd,
   onCellValueChange,
   isCellInSelection,
-  onRowHeightChange
+  onRowHeightChange,
+  onRowHeaderClick
 }) => {
   const getColumnLabel = (index: number) => {
     if (index < 26) {
@@ -54,6 +56,23 @@ const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
 
   const getCellId = (rowIndex: number, colIndex: number) => {
     return `${getColumnLabel(colIndex)}${rowIndex + 1}`;
+  };
+
+  // Check if this row is in the current selection
+  const isRowSelected = () => {
+    if (!selection) return false;
+    
+    const [startCol, startRowStr] = selection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    const [endCol, endRowStr] = selection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
+    
+    if (!startRowStr || !endRowStr) return false;
+    
+    const startRowIdx = parseInt(startRowStr, 10) - 1;
+    const endRowIdx = parseInt(endRowStr, 10) - 1;
+    const minRowIdx = Math.min(startRowIdx, endRowIdx);
+    const maxRowIdx = Math.max(startRowIdx, endRowIdx);
+    
+    return rowIndex >= minRowIdx && rowIndex <= maxRowIdx;
   };
 
   const handleRowResize = (e: React.MouseEvent) => {
@@ -79,16 +98,21 @@ const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleRowHeaderClick = (e: React.MouseEvent) => {
+    onRowHeaderClick(rowIndex, e);
+  };
+
   return (
     <div className="flex">
-      {/* Row header */}
+      {/* Row header - click to select entire row */}
       <div 
-        className="bg-excel-headerBg border-r border-b border-excel-gridBorder flex-none flex items-center justify-center text-gray-700 font-medium text-xs cursor-pointer relative hover:bg-excel-hoverBg"
+        className={`bg-excel-headerBg border-r border-b border-excel-gridBorder flex-none flex items-center justify-center text-gray-700 font-medium text-xs cursor-pointer relative hover:bg-excel-hoverBg ${isRowSelected() ? 'bg-blue-100' : ''}`}
         style={{ 
           width: '40px', 
           height: `${rowHeight}px`,
           minHeight: `${rowHeight}px`
         }}
+        onClick={handleRowHeaderClick}
       >
         {rowIndex + 1}
         {/* Resize handle */}
@@ -135,7 +159,7 @@ const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
                   e.preventDefault();
                   onCellClick(rowIndex, colIndex + 1);
                 } else if (e.key === 'Escape') {
-                  // Cancel editing
+                  // Cancel editing - handled within cell component
                 }
               }}
             />

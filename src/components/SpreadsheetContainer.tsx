@@ -2,6 +2,7 @@
 import React from 'react';
 import Spreadsheet from './Spreadsheet';
 import { Sheet, CellSelection } from '../types/sheet';
+import { useHotkeys } from '../hooks/useHotkeys';
 
 interface SpreadsheetContainerProps {
   sheet: Sheet;
@@ -20,6 +21,9 @@ const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
   onColumnWidthChange,
   onRowHeightChange
 }) => {
+  // Initialize hotkeys for keyboard navigation
+  useHotkeys();
+
   return (
     <div className="w-full h-full overflow-auto bg-white">
       <Spreadsheet 

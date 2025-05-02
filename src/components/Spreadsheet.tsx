@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Cell, CellSelection } from '../types/sheet';
 import SpreadsheetHeader from './SpreadsheetHeader';
 import SpreadsheetRow from './SpreadsheetRow';
@@ -34,6 +34,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   const [selection, setSelection] = useState<CellSelection | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [draggedCell, setDraggedCell] = useState<string | null>(null);
+  const [visibleRows, setVisibleRows] = useState({ start: 0, end: 30 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Notify parent of selection changes
@@ -43,11 +44,33 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     }
   }, [selection, onCellSelectionChange]);
 
-  // Implement infinite scrolling
-  const handleScroll = () => {
+  // Calculate visible rows for virtualization
+  const calculateVisibleRows = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    const scrollTop = containerRef.current.scrollTop;
+    const clientHeight = containerRef.current.clientHeight;
+    
+    // Assuming average row height of 22px
+    const avgRowHeight = 22;
+    const buffer = 10; // Extra rows to render above and below
+    
+    const startRow = Math.max(0, Math.floor(scrollTop / avgRowHeight) - buffer);
+    const visibleRowCount = Math.ceil(clientHeight / avgRowHeight) + buffer * 2;
+    const endRow = Math.min(rows, startRow + visibleRowCount);
+    
+    setVisibleRows({ start: startRow, end: endRow });
+  }, [rows]);
+
+  // Implement infinite scrolling and virtualization
+  const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
     
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    
+    // Calculate visible rows for virtualization
+    calculateVisibleRows();
+    
     // If user has scrolled near the bottom, add more rows
     if (scrollTop + clientHeight >= scrollHeight - 200) {
       setRows(prevRows => prevRows + 50);
@@ -58,7 +81,11 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     if (scrollLeft + clientWidth >= scrollWidth - 200) {
       setColumns(prevCols => prevCols + 10);
     }
-  };
+  }, [calculateVisibleRows]);
+
+  useEffect(() => {
+    calculateVisibleRows();
+  }, [calculateVisibleRows]);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -70,7 +97,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
         containerRef.current.removeEventListener('scroll', handleScroll);
       }
     };
-  }, []);
+  }, [handleScroll]);
 
   const getColumnLabel = (index: number) => {
     // Handle column labels beyond Z (AA, AB, etc.)
@@ -193,80 +220,54 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     }
   };
 
-  // Keyboard navigation handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (editing) return; // Don't handle navigation when editing
+  // Row selection handler
+  const handleRowHeaderClick = (rowIndex: number, e: React.MouseEvent) => {
+    const startCell = `A${rowIndex + 1}`;
+    const endCell = `${getColumnLabel(columns - 1)}${rowIndex + 1}`;
+    
+    if (e.shiftKey && selection) {
+      // Extend existing selection
+      setSelection({ ...selection, endCell });
+    } else {
+      // New selection
+      setSelection({ startCell, endCell });
+    }
+  };
 
-      const [col, rowStr] = activeCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-      if (!col || !rowStr) return;
+  // Render only visible rows for better performance
+  const visibleRowsList = [];
+  for (let i = visibleRows.start; i < visibleRows.end && i < rows; i++) {
+    visibleRowsList.push(
+      <SpreadsheetRow
+        key={`row-${i}`}
+        rowIndex={i}
+        columns={columns}
+        cells={cells}
+        activeCell={activeCell}
+        selection={selection}
+        columnWidths={columnWidths}
+        rowHeight={rowHeights[i + 1] || 22}
+        onCellClick={handleCellClick}
+        onDoubleClick={handleDoubleClick}
+        onCellMouseDown={handleCellMouseDown}
+        onCellMouseOver={handleCellMouseOver}
+        onCellDrop={handleCellDrop}
+        onCellDragStart={handleCellDragStart}
+        onCellDragEnd={handleCellDragEnd}
+        onCellValueChange={onCellChange}
+        isCellInSelection={isCellInSelection}
+        onRowHeightChange={onRowHeightChange}
+        onRowHeaderClick={handleRowHeaderClick}
+      />
+    );
+  }
 
-      const colIndex = col.charCodeAt(0) - 65;
-      const rowIndex = parseInt(rowStr, 10) - 1;
-
-      let nextColIndex = colIndex;
-      let nextRowIndex = rowIndex;
-
-      switch (e.key) {
-        case 'ArrowUp':
-          nextRowIndex = Math.max(0, rowIndex - 1);
-          break;
-        case 'ArrowDown':
-          nextRowIndex = rowIndex + 1;
-          break;
-        case 'ArrowLeft':
-          nextColIndex = Math.max(0, colIndex - 1);
-          break;
-        case 'ArrowRight':
-          nextColIndex = colIndex + 1;
-          break;
-        case 'Tab':
-          e.preventDefault();
-          nextColIndex = e.shiftKey ? colIndex - 1 : colIndex + 1;
-          break;
-        case 'Enter':
-          if (!editing) {
-            e.preventDefault();
-            nextRowIndex = rowIndex + 1;
-          }
-          break;
-        case ' ':
-          if (e.ctrlKey) {
-            e.preventDefault();
-            // Select entire column
-            const startCell = `${col}1`;
-            const endCell = `${col}${rows}`;
-            setSelection({ startCell, endCell });
-            return;
-          }
-          break;
-        default:
-          return;
-      }
-
-      // Handle shift selection
-      if (e.shiftKey && !['Tab', 'Enter'].includes(e.key)) {
-        e.preventDefault();
-        const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
-        
-        if (!selection) {
-          setSelection({ startCell: activeCell, endCell: nextCellId });
-        } else {
-          setSelection({ ...selection, endCell: nextCellId });
-        }
-      } else {
-        // Clear selection if not shift-selecting
-        setSelection(null);
-      }
-
-      // Update active cell
-      const nextCellId = `${String.fromCharCode(65 + nextColIndex)}${nextRowIndex + 1}`;
-      onCellSelect(nextCellId);
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeCell, editing, rows, selection, onCellSelect]);
+  // Top spacer for virtualization
+  const topSpacerHeight = visibleRows.start * 22;
+  
+  // Bottom spacer for virtualization
+  const bottomRowsCount = rows - visibleRows.end;
+  const bottomSpacerHeight = bottomRowsCount > 0 ? bottomRowsCount * 22 : 0;
 
   return (
     <div 
@@ -281,32 +282,19 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
         onColumnHeaderClick={handleColumnHeaderClick}
       />
       
-      <div className="flex">
-        {/* Grid cells */}
-        <div>
-          {Array.from({ length: rows }, (_, rowIndex) => (
-            <SpreadsheetRow
-              key={`row-${rowIndex}`}
-              rowIndex={rowIndex}
-              columns={columns}
-              cells={cells}
-              activeCell={activeCell}
-              selection={selection}
-              columnWidths={columnWidths}
-              rowHeight={rowHeights[rowIndex + 1] || 22}
-              onCellClick={handleCellClick}
-              onDoubleClick={handleDoubleClick}
-              onCellMouseDown={handleCellMouseDown}
-              onCellMouseOver={handleCellMouseOver}
-              onCellDrop={handleCellDrop}
-              onCellDragStart={handleCellDragStart}
-              onCellDragEnd={handleCellDragEnd}
-              onCellValueChange={onCellChange}
-              isCellInSelection={isCellInSelection}
-              onRowHeightChange={onRowHeightChange}
-            />
-          ))}
-        </div>
+      <div className="flex flex-col">
+        {/* Top spacer div */}
+        {topSpacerHeight > 0 && (
+          <div style={{ height: `${topSpacerHeight}px` }} />
+        )}
+        
+        {/* Visible rows */}
+        {visibleRowsList}
+        
+        {/* Bottom spacer div */}
+        {bottomSpacerHeight > 0 && (
+          <div style={{ height: `${bottomSpacerHeight}px` }} />
+        )}
       </div>
     </div>
   );

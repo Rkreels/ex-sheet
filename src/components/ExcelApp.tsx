@@ -6,9 +6,12 @@ import SheetTabs from './SheetTabs';
 import ChartDialog from './ChartDialog';
 import { useSheetState } from '../hooks/useSheetState';
 import { useCellOperations } from '../hooks/useCellOperations';
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import RibbonContainer from './RibbonContainer';
 import SpreadsheetArea from './SpreadsheetArea';
+import { initVoiceAssistant, startVoiceRecognition, stopVoiceRecognition, showVoiceCommandsHelp } from '../utils/voiceAssistant';
+import { Mic, MicOff } from 'lucide-react';
+import { Button } from "./ui/button";
 
 const ExcelApp = () => {
   const {
@@ -54,6 +57,7 @@ const ExcelApp = () => {
     handleFill,
     handleClearFormatting,
     handleFind,
+    handleFindReplace,
     handleInsert,
     updateColumnWidth,
     updateRowHeight,
@@ -74,6 +78,8 @@ const ExcelApp = () => {
   const [activeChart, setActiveChart] = useState<ChartData | null>(null);
   const [showDataAnalysis, setShowDataAnalysis] = useState(false);
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
 
   const handleCreateChart = (chartData: ChartData) => {
     setActiveChart(chartData);
@@ -103,6 +109,63 @@ const ExcelApp = () => {
       window.print();
       setIsPrintMode(false);
     }, 300);
+  };
+  
+  // Initialize voice assistant
+  useEffect(() => {
+    const voiceHandlers = {
+      applyFormat,
+      applyAlignment,
+      applyFontSize,
+      applyFontFamily,
+      applyColor,
+      applyBackgroundColor,
+      handlePercentFormat,
+      handleCurrencyFormat,
+      handleCopy,
+      handleCut,
+      handlePaste,
+      handleFormatPainter,
+      handleDelete,
+      handleMergeCenter,
+      handleAutoSum,
+      handleFill,
+      handleClearFormatting,
+      handleFind,
+      handleFindReplace,
+      handleSortAsc,
+      handleSortDesc,
+      handleUndo,
+      handleRedo,
+      handlePrint,
+      handleInsert
+    };
+    
+    const supported = initVoiceAssistant(voiceHandlers);
+    setVoiceEnabled(supported);
+  }, []);
+  
+  // Toggle voice recognition
+  const toggleVoiceRecognition = () => {
+    if (voiceActive) {
+      const stopped = stopVoiceRecognition();
+      if (stopped) {
+        setVoiceActive(false);
+      }
+    } else {
+      const started = startVoiceRecognition();
+      if (started) {
+        setVoiceActive(true);
+        setTimeout(() => {
+          setVoiceActive(false);
+        }, 5000); // Auto-stop after 5 seconds
+      }
+    }
+  };
+  
+  // Show help for voice commands
+  const handleVoiceHelp = () => {
+    showVoiceCommandsHelp();
   };
 
   return (
@@ -143,7 +206,32 @@ const ExcelApp = () => {
         onClearFormatting={handleClearFormatting} 
         onFind={handleFind}
         onInsert={handleInsert}
+        onFindReplace={handleFindReplace}  // Add the find-replace handler
       />
+      
+      {/* Voice control toggle */}
+      {voiceEnabled && (
+        <div className="absolute top-2 right-2 z-50 flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleVoiceRecognition}
+            className={`${voiceActive ? 'bg-red-100' : ''}`}
+            data-voice-hover="voice command"
+          >
+            {voiceActive ? <MicOff size={16} /> : <Mic size={16} />}
+            {voiceActive ? 'Stop' : 'Voice'}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleVoiceHelp}
+            data-voice-hover="voice help"
+          >
+            ?
+          </Button>
+        </div>
+      )}
       
       <SpreadsheetArea 
         activeSheet={activeSheet}

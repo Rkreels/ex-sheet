@@ -18,6 +18,20 @@ const CellEditor: React.FC<CellEditorProps> = ({ value, onChange, onBlur, onKeyD
     }
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Support keyboard shortcuts
+    if (e.key === 'Enter' && !e.shiftKey) {
+      onKeyDown(e);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      onKeyDown(e);
+    } else if (e.key === 'Escape') {
+      onKeyDown(e);
+    } else {
+      onKeyDown(e);
+    }
+  };
+
   return (
     <input
       ref={inputRef}
@@ -26,7 +40,10 @@ const CellEditor: React.FC<CellEditorProps> = ({ value, onChange, onBlur, onKeyD
       value={value}
       onChange={onChange}
       onBlur={onBlur}
-      onKeyDown={onKeyDown}
+      onKeyDown={handleKeyDown}
+      aria-label="Cell editor"
+      data-voice-control="true"
+      data-editing="true"
     />
   );
 };

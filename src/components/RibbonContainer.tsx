@@ -34,6 +34,7 @@ interface RibbonContainerProps {
   onFill?: (direction: 'down' | 'right') => void;
   onClearFormatting?: () => void;
   onFind?: () => void;
+  onFindReplace?: () => void; // Added find-replace handler
   onInsert?: (type: 'cell' | 'row' | 'column') => void;
 }
 
@@ -71,6 +72,7 @@ const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
         onFill={props.onFill}
         onClearFormatting={props.onClearFormatting}
         onFind={props.onFind}
+        onFindReplace={props.onFindReplace} // Pass the find-replace handler
         onInsert={props.onInsert}
       />
     </div>

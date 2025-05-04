@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import ClipboardSection from './ribbon/ClipboardSection';
 import FontSection from './ribbon/FontSection';
 import AlignmentSection from './ribbon/AlignmentSection';
@@ -8,6 +8,7 @@ import CellsSection from './ribbon/CellsSection';
 import EditingSection from './ribbon/EditingSection';
 import HistorySection from './ribbon/HistorySection';
 import { ChartData, NumberFormat } from '../types/sheet';
+import { Toaster } from 'sonner';
 
 interface ExcelRibbonProps {
   onBoldClick: () => void;
@@ -40,7 +41,7 @@ interface ExcelRibbonProps {
   onFill?: (direction: 'down' | 'right') => void;
   onClearFormatting?: () => void;
   onFind?: () => void;
-  onFindReplace?: () => void; // Add this prop for find and replace
+  onFindReplace?: () => void;
   onInsert?: (type: 'cell' | 'row' | 'column') => void;
   activeCellFormat: {
     bold?: boolean;
@@ -86,12 +87,253 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   onFill = () => {},
   onClearFormatting = () => {},
   onFind = () => {},
-  onFindReplace = () => {}, // Initialize the prop with default function
+  onFindReplace = () => {},
   onInsert = () => {},
   activeCellFormat 
 }) => {
   // Menu tabs
   const menuTabs = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review"];
+  const [activeTab, setActiveTab] = useState("Home");
+  
+  const handleTabClick = (tab: string) => {
+    setActiveTab(tab);
+  };
+  
+  const renderTabContent = () => {
+    switch(activeTab) {
+      case "Home":
+        return (
+          <>
+            <ClipboardSection
+              onCut={onCut}
+              onCopy={onCopy}
+              onPaste={onPaste}
+              onFormatPainter={onFormatPainter}
+            />
+            
+            <FontSection
+              onBoldClick={onBoldClick}
+              onItalicClick={onItalicClick}
+              onUnderlineClick={onUnderlineClick}
+              onFontSizeChange={onFontSizeChange}
+              onFontFamilyChange={onFontFamilyChange}
+              onColorChange={onColorChange}
+              onBackgroundColorChange={onBackgroundColorChange}
+              onCurrencyFormat={onCurrencyFormat}
+              onPercentClick={onPercentClick}
+              activeCellFormat={activeCellFormat}
+            />
+            
+            <AlignmentSection
+              onAlignLeftClick={onAlignLeftClick}
+              onAlignCenterClick={onAlignCenterClick}
+              onAlignRightClick={onAlignRightClick}
+              onWrapText={onWrapText}
+              onMergeCenter={onMergeCenter}
+              activeCellFormat={activeCellFormat}
+            />
+            
+            <NumberSection
+              onNumberFormatChange={onNumberFormatChange}
+              onPercentClick={onPercentClick}
+              onCurrencyFormat={onCurrencyFormat}
+              activeCellFormat={activeCellFormat}
+            />
+            
+            <CellsSection
+              onDelete={onDelete}
+              onInsert={onInsert}
+              onBackgroundColorChange={onBackgroundColorChange}
+              activeCellFormat={activeCellFormat}
+            />
+            
+            <EditingSection
+              onAutoSum={onAutoSum}
+              onFill={onFill}
+              onClearFormatting={onClearFormatting}
+              onFind={onFind}
+              onFindReplace={onFindReplace}
+              onSortAsc={onSortAsc}
+              onSortDesc={onSortDesc}
+            />
+            
+            <HistorySection
+              onUndo={onUndo}
+              onRedo={onRedo}
+              onPrint={onPrint}
+            />
+          </>
+        );
+      
+      case "Insert":
+        return (
+          <div className="flex p-2">
+            <RibbonSection title="Charts" voiceCommand="insert chart">
+              <div className="flex flex-col items-center">
+                <button 
+                  className="ribbon-button p-1" 
+                  onClick={() => onCreateChart({
+                    type: 'bar',
+                    title: 'Sales Chart',
+                    data: [],
+                    labels: []
+                  })}
+                  data-voice-command="insert bar chart"
+                >
+                  <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                    <span style={{ fontSize: '20px' }}>📊</span>
+                  </div>
+                  <div className="text-xs mt-1">Bar Chart</div>
+                </button>
+              </div>
+            </RibbonSection>
+            
+            <RibbonSection title="Tables" voiceCommand="insert table">
+              <div className="flex flex-col items-center">
+                <button className="ribbon-button p-1" onClick={() => alert('Table feature coming soon')}>
+                  <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                    <span style={{ fontSize: '20px' }}>🧮</span>
+                  </div>
+                  <div className="text-xs mt-1">Table</div>
+                </button>
+              </div>
+            </RibbonSection>
+            
+            <RibbonSection title="Illustrations" voiceCommand="insert illustration">
+              <div className="flex flex-col items-center">
+                <button className="ribbon-button p-1" onClick={() => alert('Images feature coming soon')}>
+                  <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                    <span style={{ fontSize: '20px' }}>🖼️</span>
+                  </div>
+                  <div className="text-xs mt-1">Images</div>
+                </button>
+              </div>
+            </RibbonSection>
+          </div>
+        );
+      
+      case "Page Layout":
+        return (
+          <div className="flex p-2">
+            <RibbonSection title="Themes" voiceCommand="change theme">
+              <button className="ribbon-button p-1" onClick={() => alert('Themes feature coming soon')}>
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '20px' }}>🎨</span>
+                </div>
+                <div className="text-xs mt-1">Themes</div>
+              </button>
+            </RibbonSection>
+            
+            <RibbonSection title="Page Setup" voiceCommand="page setup">
+              <button className="ribbon-button p-1" onClick={() => alert('Page Setup feature coming soon')}>
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '20px' }}>📄</span>
+                </div>
+                <div className="text-xs mt-1">Margins</div>
+              </button>
+            </RibbonSection>
+          </div>
+        );
+      
+      case "Formulas":
+        return (
+          <div className="flex p-2">
+            <RibbonSection title="Function Library" voiceCommand="insert function">
+              <button 
+                className="ribbon-button p-1" 
+                onClick={onAutoSum}
+                data-voice-command="autosum"
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '20px' }}>∑</span>
+                </div>
+                <div className="text-xs mt-1">AutoSum</div>
+              </button>
+              
+              <button className="ribbon-button p-1" onClick={() => alert('More functions coming soon')}>
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>f(x)</span>
+                </div>
+                <div className="text-xs mt-1">Functions</div>
+              </button>
+            </RibbonSection>
+          </div>
+        );
+      
+      case "Data":
+        return (
+          <div className="flex p-2">
+            <RibbonSection title="Sort & Filter" voiceCommand="sort data">
+              <button 
+                className="ribbon-button p-1" 
+                onClick={onSortAsc}
+                data-voice-command="sort ascending"
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>A→Z</span>
+                </div>
+                <div className="text-xs mt-1">Sort A-Z</div>
+              </button>
+              
+              <button 
+                className="ribbon-button p-1" 
+                onClick={onSortDesc}
+                data-voice-command="sort descending"
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>Z→A</span>
+                </div>
+                <div className="text-xs mt-1">Sort Z-A</div>
+              </button>
+            </RibbonSection>
+            
+            <RibbonSection title="Data Tools" voiceCommand="data tools">
+              <button 
+                className="ribbon-button p-1" 
+                onClick={() => alert('Data validation coming soon')}
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>✓</span>
+                </div>
+                <div className="text-xs mt-1">Validation</div>
+              </button>
+            </RibbonSection>
+          </div>
+        );
+      
+      case "Review":
+        return (
+          <div className="flex p-2">
+            <RibbonSection title="Proofing" voiceCommand="spell check">
+              <button 
+                className="ribbon-button p-1" 
+                onClick={() => alert('Spell check coming soon')}
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>ABC</span>
+                </div>
+                <div className="text-xs mt-1">Spelling</div>
+              </button>
+            </RibbonSection>
+            
+            <RibbonSection title="Comments" voiceCommand="insert comment">
+              <button 
+                className="ribbon-button p-1" 
+                onClick={() => alert('Comments feature coming soon')}
+              >
+                <div className="w-10 h-10 flex items-center justify-center border border-gray-300 bg-white">
+                  <span style={{ fontSize: '15px' }}>💬</span>
+                </div>
+                <div className="text-xs mt-1">Comment</div>
+              </button>
+            </RibbonSection>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
   
   return (
     <div className="ribbon border-b border-gray-300">
@@ -102,7 +344,9 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
             {menuTabs.map((tab, index) => (
               <div 
                 key={index} 
-                className={`text-sm px-2 py-1 cursor-pointer ${index === 0 ? 'font-semibold border-b-2 border-blue-500' : ''}`}
+                className={`text-sm px-2 py-1 cursor-pointer ${activeTab === tab ? 'font-semibold border-b-2 border-blue-500' : ''}`}
+                onClick={() => handleTabClick(tab)}
+                data-voice-command={`goto ${tab.toLowerCase()} tab`}
               >
                 {tab}
               </div>
@@ -112,65 +356,30 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
         
         {/* Main ribbon content */}
         <div className="flex flex-wrap bg-gray-100 overflow-x-auto">
-          <ClipboardSection
-            onCut={onCut}
-            onCopy={onCopy}
-            onPaste={onPaste}
-            onFormatPainter={onFormatPainter}
-          />
-          
-          <FontSection
-            onBoldClick={onBoldClick}
-            onItalicClick={onItalicClick}
-            onUnderlineClick={onUnderlineClick}
-            onFontSizeChange={onFontSizeChange}
-            onFontFamilyChange={onFontFamilyChange}
-            onColorChange={onColorChange}
-            onBackgroundColorChange={onBackgroundColorChange}
-            onCurrencyFormat={onCurrencyFormat}
-            onPercentClick={onPercentClick}
-            activeCellFormat={activeCellFormat}
-          />
-          
-          <AlignmentSection
-            onAlignLeftClick={onAlignLeftClick}
-            onAlignCenterClick={onAlignCenterClick}
-            onAlignRightClick={onAlignRightClick}
-            onWrapText={onWrapText}
-            onMergeCenter={onMergeCenter}
-            activeCellFormat={activeCellFormat}
-          />
-          
-          <NumberSection
-            onNumberFormatChange={onNumberFormatChange}
-            onPercentClick={onPercentClick}
-            onCurrencyFormat={onCurrencyFormat}
-            activeCellFormat={activeCellFormat}
-          />
-          
-          <CellsSection
-            onDelete={onDelete}
-            onInsert={onInsert}
-            onBackgroundColorChange={onBackgroundColorChange}
-            activeCellFormat={activeCellFormat}
-          />
-          
-          <EditingSection
-            onAutoSum={onAutoSum}
-            onFill={onFill}
-            onClearFormatting={onClearFormatting}
-            onFind={onFind}
-            onFindReplace={onFindReplace} // Pass the find-replace handler
-            onSortAsc={onSortAsc}
-            onSortDesc={onSortDesc}
-          />
-          
-          <HistorySection
-            onUndo={onUndo}
-            onRedo={onRedo}
-            onPrint={onPrint}
-          />
+          {renderTabContent()}
         </div>
+      </div>
+      <Toaster position="top-right" />
+    </div>
+  );
+};
+
+// Helper component for the Insert/Page Layout/etc tabs
+const RibbonSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  voiceCommand?: string;
+}> = ({ title, children, className, voiceCommand }) => {
+  return (
+    <div 
+      className={`ribbon-section border-r border-gray-300 p-1 ${className || ''}`}
+      data-voice-section={title.toLowerCase()}
+      data-voice-command={voiceCommand || title.toLowerCase()}
+    >
+      <div className="text-xs text-center font-semibold mb-1">{title}</div>
+      <div className="flex flex-wrap gap-1">
+        {children}
       </div>
     </div>
   );

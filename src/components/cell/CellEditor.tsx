@@ -14,7 +14,10 @@ const CellEditor: React.FC<CellEditorProps> = ({ value, onChange, onBlur, onKeyD
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
+      
+      // Position cursor at the end of the text
+      const length = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(length, length);
     }
   }, []);
 

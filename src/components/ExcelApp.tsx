@@ -10,7 +10,7 @@ import { toast, Toaster } from "sonner";
 import RibbonContainer from './RibbonContainer';
 import SpreadsheetArea from './SpreadsheetArea';
 import { initVoiceAssistant, startVoiceRecognition, stopVoiceRecognition, showVoiceCommandsHelp } from '../utils/voiceAssistant';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, HelpCircle } from 'lucide-react';
 import { Button } from "./ui/button";
 
 const ExcelApp = () => {
@@ -29,6 +29,8 @@ const ExcelApp = () => {
     handleFormulaChange,
     addNewSheet,
     handleSheetSelect,
+    handleRenameSheet,
+    handleDeleteSheet,
     handleDemoData,
     handleUndo,
     handleRedo,
@@ -138,7 +140,11 @@ const ExcelApp = () => {
       handleUndo,
       handleRedo,
       handlePrint,
-      handleInsert
+      handleInsert,
+      addNewSheet,
+      handleRenameSheet,
+      handleDeleteSheet,
+      handleSheetSelect
     };
     
     const supported = initVoiceAssistant(voiceHandlers);
@@ -151,14 +157,16 @@ const ExcelApp = () => {
       const stopped = stopVoiceRecognition();
       if (stopped) {
         setVoiceActive(false);
+        toast.info("Voice recognition stopped");
       }
     } else {
       const started = startVoiceRecognition();
       if (started) {
         setVoiceActive(true);
+        toast.success("Voice recognition activated - try saying 'bold this cell'");
         setTimeout(() => {
           setVoiceActive(false);
-        }, 5000); // Auto-stop after 5 seconds
+        }, 10000); // Auto-stop after 10 seconds
       }
     }
   };
@@ -206,7 +214,7 @@ const ExcelApp = () => {
         onClearFormatting={handleClearFormatting} 
         onFind={handleFind}
         onInsert={handleInsert}
-        onFindReplace={handleFindReplace}  // Add the find-replace handler
+        onFindReplace={handleFindReplace}
       />
       
       {/* Voice control toggle */}
@@ -228,7 +236,7 @@ const ExcelApp = () => {
             onClick={handleVoiceHelp}
             data-voice-hover="voice help"
           >
-            ?
+            <HelpCircle size={16} />
           </Button>
         </div>
       )}
@@ -259,6 +267,8 @@ const ExcelApp = () => {
           activeSheetId={activeSheetId}
           onSheetSelect={handleSheetSelect}
           onAddSheet={addNewSheet}
+          onRenameSheet={handleRenameSheet}
+          onDeleteSheet={handleDeleteSheet}
         />
       </div>
       

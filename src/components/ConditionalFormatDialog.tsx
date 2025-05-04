@@ -55,25 +55,26 @@ const ConditionalFormatDialog: React.FC<ConditionalFormatDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-2">
             <Label htmlFor="rule-type" className="col-span-1">Rule Type</Label>
-            <Select
-              value={formatType}
-              onValueChange={(value) => setFormatType(value as ConditionalFormat['type'])}
-              className="col-span-3"
-            >
-              <SelectTrigger id="rule-type">
-                <SelectValue placeholder="Select rule type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="greaterThan">Greater Than</SelectItem>
-                <SelectItem value="lessThan">Less Than</SelectItem>
-                <SelectItem value="equalTo">Equal To</SelectItem>
-                <SelectItem value="between">Between</SelectItem>
-                <SelectItem value="containsText">Contains Text</SelectItem>
-                <SelectItem value="top10">Top 10 Items</SelectItem>
-                <SelectItem value="aboveAverage">Above Average</SelectItem>
-                <SelectItem value="belowAverage">Below Average</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="col-span-3">
+              <Select
+                value={formatType}
+                onValueChange={(value) => setFormatType(value as ConditionalFormat['type'])}
+              >
+                <SelectTrigger id="rule-type">
+                  <SelectValue placeholder="Select rule type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="greaterThan">Greater Than</SelectItem>
+                  <SelectItem value="lessThan">Less Than</SelectItem>
+                  <SelectItem value="equalTo">Equal To</SelectItem>
+                  <SelectItem value="between">Between</SelectItem>
+                  <SelectItem value="containsText">Contains Text</SelectItem>
+                  <SelectItem value="top10">Top 10 Items</SelectItem>
+                  <SelectItem value="aboveAverage">Above Average</SelectItem>
+                  <SelectItem value="belowAverage">Below Average</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-2">

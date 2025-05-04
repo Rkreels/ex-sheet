@@ -145,6 +145,7 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
     }
   },
   
+  // Enhanced functions
   COUNTIF: {
     name: 'COUNTIF',
     description: 'Counts the number of cells within a range that meet the given criteria.',
@@ -159,6 +160,10 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
           return val < parseFloat(criteria.substring(1));
         } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
           return val == criteria.substring(1);
+        } else if (typeof criteria === 'string' && criteria.includes('*')) {
+          const pattern = criteria.replace(/\*/g, '.*');
+          const regex = new RegExp(`^${pattern}$`, 'i');
+          return regex.test(String(val));
         } else {
           return val == criteria;
         }
@@ -185,6 +190,10 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
           matches = val < parseFloat(criteria.substring(1));
         } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
           matches = val == criteria.substring(1);
+        } else if (typeof criteria === 'string' && criteria.includes('*')) {
+          const pattern = criteria.replace(/\*/g, '.*');
+          const regex = new RegExp(`^${pattern}$`, 'i');
+          matches = regex.test(String(val));
         } else {
           matches = val == criteria;
         }
@@ -198,6 +207,43 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
       });
       
       return sum;
+    }
+  },
+
+  AVERAGEIF: {
+    name: 'AVERAGEIF',
+    description: 'Returns the average of values that meet a criteria.',
+    usage: 'AVERAGEIF(range, criteria, [average_range])',
+    execute: (range: any[], criteria: any, averageRange?: any[]) => {
+      if (!Array.isArray(range)) return 0;
+      
+      const rangesToAvg = averageRange || range;
+      let sum = 0;
+      let count = 0;
+      
+      range.forEach((val, index) => {
+        let matches = false;
+        
+        if (typeof criteria === 'string' && criteria.startsWith('>')) {
+          matches = val > parseFloat(criteria.substring(1));
+        } else if (typeof criteria === 'string' && criteria.startsWith('<')) {
+          matches = val < parseFloat(criteria.substring(1));
+        } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
+          matches = val == criteria.substring(1);
+        } else {
+          matches = val == criteria;
+        }
+        
+        if (matches && rangesToAvg[index] !== undefined) {
+          const num = parseFloat(rangesToAvg[index]);
+          if (!isNaN(num)) {
+            sum += num;
+            count++;
+          }
+        }
+      });
+      
+      return count > 0 ? sum / count : 0;
     }
   },
   
@@ -250,6 +296,63 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
         return valueIfError;
       }
       return value;
+    }
+  },
+  
+  LEFT: {
+    name: 'LEFT',
+    description: 'Returns the specified number of characters from the start of a text string.',
+    usage: 'LEFT(text, num_chars)',
+    execute: (text: string, numChars: number) => {
+      if (typeof text !== 'string') return '';
+      return text.substring(0, numChars || 1);
+    }
+  },
+  
+  RIGHT: {
+    name: 'RIGHT',
+    description: 'Returns the specified number of characters from the end of a text string.',
+    usage: 'RIGHT(text, num_chars)',
+    execute: (text: string, numChars: number) => {
+      if (typeof text !== 'string') return '';
+      return text.substring(text.length - (numChars || 1));
+    }
+  },
+  
+  MID: {
+    name: 'MID',
+    description: 'Returns the characters from the middle of a text string, given a starting position and length.',
+    usage: 'MID(text, start_num, num_chars)',
+    execute: (text: string, startNum: number, numChars: number) => {
+      if (typeof text !== 'string') return '';
+      return text.substring(startNum - 1, startNum - 1 + numChars);
+    }
+  },
+  
+  AND: {
+    name: 'AND',
+    description: 'Returns TRUE if all arguments are TRUE.',
+    usage: 'AND(logical1, [logical2], ...)',
+    execute: (...args: any[]) => {
+      return args.every(Boolean);
+    }
+  },
+  
+  OR: {
+    name: 'OR',
+    description: 'Returns TRUE if any argument is TRUE.',
+    usage: 'OR(logical1, [logical2], ...)',
+    execute: (...args: any[]) => {
+      return args.some(Boolean);
+    }
+  },
+  
+  NOT: {
+    name: 'NOT',
+    description: 'Reverses the logical value of its argument.',
+    usage: 'NOT(logical)',
+    execute: (logical: any) => {
+      return !Boolean(logical);
     }
   }
 };

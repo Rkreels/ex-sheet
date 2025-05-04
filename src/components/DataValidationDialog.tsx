@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { DataValidation, CellRange } from '../types/sheet';
 
 interface DataValidationDialogProps {
@@ -16,206 +14,45 @@ interface DataValidationDialogProps {
   selectedRange?: CellRange;
 }
 
-const DataValidationDialog: React.FC<DataValidationDialogProps> = ({
-  isOpen,
+const DataValidationDialog: React.FC<DataValidationDialogProps> = ({ 
+  isOpen, 
   onClose,
   onApply,
   selectedRange
 }) => {
   const [validationType, setValidationType] = useState<DataValidation['type']>('list');
-  const [operator, setOperator] = useState<any>('between');
+  const [operator, setOperator] = useState<string>('equal');
   const [value1, setValue1] = useState<string>('');
   const [value2, setValue2] = useState<string>('');
   const [listValues, setListValues] = useState<string>('');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [formula, setFormula] = useState<string>('');
   const [allowBlank, setAllowBlank] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [showDropdown, setShowDropdown] = useState<boolean>(true);
 
   const handleApply = () => {
     let validation: DataValidation = {
       type: validationType,
       allowBlank,
-      errorMessage: errorMessage.trim() ? errorMessage : undefined
+      errorMessage,
+      showDropdown
     };
 
-    // Add type-specific properties
-    switch (validationType) {
-      case 'list':
-        validation.list = listValues.split(',').map(item => item.trim());
-        validation.showDropdown = showDropdown;
-        break;
-      case 'number':
-      case 'date':
-        validation.operator = operator;
-        validation.value1 = validationType === 'number' && !isNaN(Number(value1)) 
-          ? Number(value1) 
-          : value1;
-        
-        if (operator === 'between' || operator === 'notBetween') {
-          validation.value2 = validationType === 'number' && !isNaN(Number(value2)) 
-            ? Number(value2) 
-            : value2;
-        }
-        break;
-      case 'text':
-        validation.operator = operator;
-        validation.value1 = value1;
-        break;
-      case 'custom':
-        validation.formula = value1;
-        break;
+    if (validationType === 'list') {
+      validation.list = listValues.split(',').map(item => item.trim());
+    } else if (validationType === 'custom') {
+      validation.formula = formula;
+    } else {
+      validation.operator = operator as any;
+      validation.value1 = value1 ? (isNaN(Number(value1)) ? value1 : Number(value1)) : undefined;
+      
+      if (['between', 'notBetween'].includes(operator)) {
+        validation.value2 = value2 ? (isNaN(Number(value2)) ? value2 : Number(value2)) : undefined;
+      }
     }
 
     onApply(validation);
     onClose();
-  };
-
-  const renderValidationFields = () => {
-    switch (validationType) {
-      case 'list':
-        return (
-          <>
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="list-values" className="col-span-1">Source</Label>
-              <Textarea
-                id="list-values"
-                value={listValues}
-                onChange={(e) => setListValues(e.target.value)}
-                placeholder="Enter values separated by commas"
-                className="col-span-3 min-h-[80px]"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="show-dropdown" className="col-span-1">In-cell dropdown</Label>
-              <div className="col-span-3">
-                <Switch 
-                  id="show-dropdown" 
-                  checked={showDropdown} 
-                  onCheckedChange={setShowDropdown} 
-                />
-              </div>
-            </div>
-          </>
-        );
-      
-      case 'number':
-      case 'date':
-        return (
-          <>
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="operator" className="col-span-1">Operator</Label>
-              <Select
-                value={operator}
-                onValueChange={setOperator}
-                className="col-span-3"
-              >
-                <SelectTrigger id="operator">
-                  <SelectValue placeholder="Select operator" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="between">between</SelectItem>
-                  <SelectItem value="notBetween">not between</SelectItem>
-                  <SelectItem value="equal">equal to</SelectItem>
-                  <SelectItem value="notEqual">not equal to</SelectItem>
-                  <SelectItem value="greaterThan">greater than</SelectItem>
-                  <SelectItem value="lessThan">less than</SelectItem>
-                  <SelectItem value="greaterThanOrEqual">greater than or equal to</SelectItem>
-                  <SelectItem value="lessThanOrEqual">less than or equal to</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(operator === 'between' || operator === 'notBetween') ? (
-              <>
-                <div className="grid grid-cols-4 items-center gap-2">
-                  <Label htmlFor="minimum" className="col-span-1">Minimum</Label>
-                  <Input
-                    id="minimum"
-                    type={validationType === 'date' ? "date" : "text"}
-                    value={value1}
-                    onChange={(e) => setValue1(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-2">
-                  <Label htmlFor="maximum" className="col-span-1">Maximum</Label>
-                  <Input
-                    id="maximum"
-                    type={validationType === 'date' ? "date" : "text"}
-                    value={value2}
-                    onChange={(e) => setValue2(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="grid grid-cols-4 items-center gap-2">
-                <Label htmlFor="value" className="col-span-1">Value</Label>
-                <Input
-                  id="value"
-                  type={validationType === 'date' ? "date" : "text"}
-                  value={value1}
-                  onChange={(e) => setValue1(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            )}
-          </>
-        );
-      
-      case 'text':
-        return (
-          <>
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="text-operator" className="col-span-1">Data</Label>
-              <Select
-                value={operator}
-                onValueChange={setOperator}
-                className="col-span-3"
-              >
-                <SelectTrigger id="text-operator">
-                  <SelectValue placeholder="Select criteria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="equal">equal to</SelectItem>
-                  <SelectItem value="notEqual">not equal to</SelectItem>
-                  <SelectItem value="contains">contains</SelectItem>
-                  <SelectItem value="notContains">does not contain</SelectItem>
-                  <SelectItem value="startsWith">starts with</SelectItem>
-                  <SelectItem value="endsWith">ends with</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label htmlFor="text-value" className="col-span-1">Text</Label>
-              <Input
-                id="text-value"
-                value={value1}
-                onChange={(e) => setValue1(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </>
-        );
-      
-      case 'custom':
-        return (
-          <div className="grid grid-cols-4 items-center gap-2">
-            <Label htmlFor="formula" className="col-span-1">Formula</Label>
-            <Input
-              id="formula"
-              value={value1}
-              onChange={(e) => setValue1(e.target.value)}
-              className="col-span-3"
-              placeholder="=A1>0"
-            />
-          </div>
-        );
-
-      default:
-        return null;
-    }
   };
 
   return (
@@ -228,50 +65,144 @@ const DataValidationDialog: React.FC<DataValidationDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-2">
             <Label htmlFor="validation-type" className="col-span-1">Allow</Label>
-            <Select
-              value={validationType}
-              onValueChange={(value) => setValidationType(value as DataValidation['type'])}
-              className="col-span-3"
-            >
-              <SelectTrigger id="validation-type">
-                <SelectValue placeholder="Select validation type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="list">List</SelectItem>
-                <SelectItem value="number">Number</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="custom">Custom formula</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {renderValidationFields()}
-
-          <div className="grid grid-cols-4 items-center gap-2">
-            <Label htmlFor="allow-blank" className="col-span-1">Ignore blanks</Label>
             <div className="col-span-3">
-              <Switch 
-                id="allow-blank" 
-                checked={allowBlank} 
-                onCheckedChange={setAllowBlank} 
-              />
+              <Select
+                value={validationType}
+                onValueChange={(value) => setValidationType(value as DataValidation['type'])}
+              >
+                <SelectTrigger id="validation-type">
+                  <SelectValue placeholder="Select validation type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="list">List</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="custom">Custom Formula</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 items-start gap-2">
-            <Label htmlFor="error-message" className="col-span-1">Error message</Label>
-            <Textarea
+          {validationType === 'list' && (
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="list-values" className="col-span-1">Values</Label>
+              <Input
+                id="list-values"
+                value={listValues}
+                onChange={(e) => setListValues(e.target.value)}
+                placeholder="Enter comma-separated values"
+                className="col-span-3"
+              />
+            </div>
+          )}
+
+          {validationType === 'custom' && (
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="formula" className="col-span-1">Formula</Label>
+              <Input
+                id="formula"
+                value={formula}
+                onChange={(e) => setFormula(e.target.value)}
+                placeholder="Enter formula (e.g. =A1>100)"
+                className="col-span-3"
+              />
+            </div>
+          )}
+
+          {(validationType === 'number' || validationType === 'date' || validationType === 'text') && (
+            <>
+              <div className="grid grid-cols-4 items-center gap-2">
+                <Label htmlFor="operator" className="col-span-1">Operator</Label>
+                <div className="col-span-3">
+                  <Select
+                    value={operator}
+                    onValueChange={setOperator}
+                  >
+                    <SelectTrigger id="operator">
+                      <SelectValue placeholder="Select operator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equal">Equal to</SelectItem>
+                      <SelectItem value="notEqual">Not equal to</SelectItem>
+                      <SelectItem value="greaterThan">Greater than</SelectItem>
+                      <SelectItem value="lessThan">Less than</SelectItem>
+                      <SelectItem value="greaterThanOrEqual">Greater than or equal to</SelectItem>
+                      <SelectItem value="lessThanOrEqual">Less than or equal to</SelectItem>
+                      <SelectItem value="between">Between</SelectItem>
+                      <SelectItem value="notBetween">Not between</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-2">
+                <Label htmlFor="value1" className="col-span-1">
+                  {['between', 'notBetween'].includes(operator) ? 'Minimum' : 'Value'}
+                </Label>
+                <Input
+                  id="value1"
+                  value={value1}
+                  onChange={(e) => setValue1(e.target.value)}
+                  className="col-span-3"
+                  type={validationType === 'date' ? 'date' : 'text'}
+                  placeholder={validationType === 'date' ? '' : "Enter a value"}
+                />
+              </div>
+
+              {['between', 'notBetween'].includes(operator) && (
+                <div className="grid grid-cols-4 items-center gap-2">
+                  <Label htmlFor="value2" className="col-span-1">Maximum</Label>
+                  <Input
+                    id="value2"
+                    value={value2}
+                    onChange={(e) => setValue2(e.target.value)}
+                    className="col-span-3"
+                    type={validationType === 'date' ? 'date' : 'text'}
+                    placeholder={validationType === 'date' ? '' : "Enter maximum value"}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label htmlFor="error-message" className="col-span-1">Error Message</Label>
+            <Input
               id="error-message"
               value={errorMessage}
               onChange={(e) => setErrorMessage(e.target.value)}
-              placeholder="Custom error message (optional)"
-              className="col-span-3 min-h-[60px]"
+              className="col-span-3"
+              placeholder="Optional error message"
             />
           </div>
 
+          <div className="flex items-center mt-2">
+            <input 
+              type="checkbox" 
+              id="allow-blank" 
+              checked={allowBlank} 
+              onChange={() => setAllowBlank(!allowBlank)} 
+              className="mr-2"
+            />
+            <Label htmlFor="allow-blank">Allow blank values</Label>
+          </div>
+
+          {validationType === 'list' && (
+            <div className="flex items-center mt-2">
+              <input 
+                type="checkbox" 
+                id="show-dropdown" 
+                checked={showDropdown} 
+                onChange={() => setShowDropdown(!showDropdown)} 
+                className="mr-2"
+              />
+              <Label htmlFor="show-dropdown">Show dropdown in cell</Label>
+            </div>
+          )}
+
           {selectedRange && (
-            <div className="grid grid-cols-4 items-center gap-2">
+            <div className="grid grid-cols-4 items-center gap-2 mt-2">
               <Label className="col-span-1">Applies to</Label>
               <div className="col-span-3">
                 <code className="bg-gray-100 px-2 py-1 rounded">

@@ -1,9 +1,11 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { Cell } from '../types/sheet';
 import CellContextMenu from './CellContextMenu';
+import CellDisplay from './cell/CellDisplay';
+import CellEditor from './cell/CellEditor';
 
 interface SpreadsheetCellProps {
   cellId: string;
@@ -52,15 +54,6 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   const [editValue, setEditValue] = useState('');
   const [displayValue, setDisplayValue] = useState('');
   const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Focus input when editing starts
-  useEffect(() => {
-    if (isActive && editing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isActive, editing]);
 
   // Calculate display value for formulas and update when cells change
   useEffect(() => {
@@ -155,30 +148,26 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   const isColumnE = getColumnLabel(colIndex) === 'E';
   const isRow3 = rowIndex + 1 === 3;
 
-  // Prepare context menu handlers
+  // Context menu handlers
   const handleCellCopy = () => {
-    // Trigger copy function via context
     const copyEvent = new Event('copy-cell') as any;
     copyEvent.cellId = cellId;
     document.dispatchEvent(copyEvent);
   };
   
   const handleCellCut = () => {
-    // Trigger cut function via context
     const cutEvent = new Event('cut-cell') as any;
     cutEvent.cellId = cellId;
     document.dispatchEvent(cutEvent);
   };
   
   const handleCellPaste = () => {
-    // Trigger paste function via context
     const pasteEvent = new Event('paste-cell') as any;
     pasteEvent.cellId = cellId;
     document.dispatchEvent(pasteEvent);
   };
   
   const handleCellDelete = () => {
-    // Trigger delete function via context
     const deleteEvent = new Event('delete-cell') as any;
     deleteEvent.cellId = cellId;
     document.dispatchEvent(deleteEvent);
@@ -223,36 +212,14 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       data-cell-id={cellId}
     >
       {isActive && editing ? (
-        <input
-          ref={inputRef}
-          type="text"
-          className="absolute top-0 left-0 w-full h-full px-1 outline-none"
+        <CellEditor
           value={editValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
         />
       ) : (
-        <div 
-          className={cn(
-            "w-full h-full px-1 overflow-hidden text-sm",
-            cellData?.format?.bold && "font-bold",
-            cellData?.format?.italic && "italic",
-            cellData?.format?.underline && "underline",
-            cellData?.format?.alignment === 'left' && "text-left",
-            cellData?.format?.alignment === 'center' && "text-center",
-            cellData?.format?.alignment === 'right' && "text-right",
-            !cellData?.format?.alignment && "text-left"
-          )}
-          style={{
-            color: cellData?.format?.color || 'inherit',
-            backgroundColor: cellData?.format?.backgroundColor || 'transparent',
-            fontFamily: cellData?.format?.fontFamily || 'inherit',
-            fontSize: cellData?.format?.fontSize || 'inherit'
-          }}
-        >
-          {displayValue}
-        </div>
+        <CellDisplay cellData={cellData} displayValue={displayValue} />
       )}
     </div>
   );

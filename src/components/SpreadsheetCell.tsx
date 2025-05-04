@@ -184,6 +184,15 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     document.dispatchEvent(deleteEvent);
   };
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    onCellClick(rowIndex, colIndex);
+    
+    // Handle format painter case
+    if (document.body.style.cursor === 'cell') {
+      handleFormatPainted();
+    }
+  };
+
   const cellContent = (
     <div
       className={cn(
@@ -201,7 +210,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         height: `${height}px`,
         minHeight: `${height}px`,
       }}
-      onClick={() => onCellClick(rowIndex, colIndex)}
+      onClick={handleCellClick}
       onDoubleClick={handleDoubleClickInternal}
       onMouseDown={(e) => onCellMouseDown(rowIndex, colIndex, e)}
       onMouseOver={() => onCellMouseOver(rowIndex, colIndex)}
@@ -211,7 +220,6 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       draggable={!editing}
       onDragStart={() => onCellDragStart(cellId)} 
       onDragEnd={onCellDragEnd}
-      onClick={handleFormatPainted}
       data-cell-id={cellId}
     >
       {isActive && editing ? (

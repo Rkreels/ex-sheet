@@ -1,337 +1,175 @@
-import { Cell, FormulaFunction, FormulaFunctionName } from '../types/sheet';
+import { FormulaFunction } from '../types/sheet';
+import formulaFunctions from './formulaFunctions';
+import { Cell } from '../types/sheet';
 
-// Define advanced formula functions
-const formulaFunctions: Record<FormulaFunctionName, FormulaFunction> = {
-  SUM: {
-    name: 'SUM',
-    description: 'Adds all the numbers in a range of cells',
-    usage: 'SUM(number1, [number2], ...)',
-    execute: (args, cells) => {
-      return args.reduce((sum, val) => {
-        const num = parseFloat(String(val));
-        return sum + (isNaN(num) ? 0 : num);
-      }, 0);
-    }
-  },
-  AVERAGE: {
-    name: 'AVERAGE',
-    description: 'Returns the average of its arguments',
-    usage: 'AVERAGE(number1, [number2], ...)',
-    execute: (args, cells) => {
-      if (args.length === 0) return 0;
-      const sum = formulaFunctions.SUM.execute(args, cells);
-      return sum / args.length;
-    }
-  },
-  MIN: {
-    name: 'MIN',
-    description: 'Returns the minimum value in a list of arguments',
-    usage: 'MIN(number1, [number2], ...)',
-    execute: (args, cells) => {
-      if (args.length === 0) return 0;
-      return Math.min(...args.map(val => {
-        const num = parseFloat(String(val));
-        return isNaN(num) ? Infinity : num;
-      }));
-    }
-  },
-  MAX: {
-    name: 'MAX',
-    description: 'Returns the maximum value in a list of arguments',
-    usage: 'MAX(number1, [number2], ...)',
-    execute: (args, cells) => {
-      if (args.length === 0) return 0;
-      return Math.max(...args.map(val => {
-        const num = parseFloat(String(val));
-        return isNaN(num) ? -Infinity : num;
-      }));
-    }
-  },
-  COUNT: {
-    name: 'COUNT',
-    description: 'Counts the number of cells that contain numbers',
-    usage: 'COUNT(value1, [value2], ...)',
-    execute: (args, cells) => {
-      return args.filter(val => !isNaN(parseFloat(String(val)))).length;
-    }
-  },
-  IF: {
-    name: 'IF',
-    description: 'Returns one value if a condition is true and another if it is false',
-    usage: 'IF(logical_test, value_if_true, value_if_false)',
-    execute: (args, cells) => {
-      if (args.length < 3) return '#ERROR';
-      const condition = !!args[0];
-      return condition ? args[1] : args[2];
-    }
-  },
-  CONCATENATE: {
-    name: 'CONCATENATE',
-    description: 'Joins several text strings into one text string',
-    usage: 'CONCATENATE(text1, [text2], ...)',
-    execute: (args, cells) => {
-      return args.join('');
-    }
-  },
-  VLOOKUP: {
-    name: 'VLOOKUP',
-    description: 'Looks up a value in the first column of a table and returns a value in the same row',
-    usage: 'VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])',
-    execute: (args, cells) => {
-      // Simplified implementation
-      return 'VLOOKUP not fully implemented';
-    }
-  },
-  HLOOKUP: {
-    name: 'HLOOKUP',
-    description: 'Looks up a value in the top row of a table and returns a value in the same column',
-    usage: 'HLOOKUP(lookup_value, table_array, row_index_num, [range_lookup])',
-    execute: (args, cells) => {
-      // Simplified implementation
-      return 'HLOOKUP not fully implemented';
-    }
-  },
-  ROUND: {
-    name: 'ROUND',
-    description: 'Rounds a number to a specified number of digits',
-    usage: 'ROUND(number, num_digits)',
-    execute: (args, cells) => {
-      if (args.length < 2) return '#ERROR';
-      const num = parseFloat(String(args[0]));
-      const digits = parseInt(String(args[1]));
-      if (isNaN(num) || isNaN(digits)) return '#ERROR';
-      const factor = Math.pow(10, digits);
-      return Math.round(num * factor) / factor;
-    }
-  },
-  TODAY: {
-    name: 'TODAY',
-    description: 'Returns the current date',
-    usage: 'TODAY()',
-    execute: (args, cells) => {
-      const today = new Date();
-      return `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
-    }
-  },
-  NOW: {
-    name: 'NOW',
-    description: 'Returns the current date and time',
-    usage: 'NOW()',
-    execute: (args, cells) => {
-      const now = new Date();
-      return `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-    }
-  },
-  DATE: {
-    name: 'DATE',
-    description: 'Returns the number that represents the date in Excel date-time code',
-    usage: 'DATE(year, month, day)',
-    execute: (args, cells) => {
-      if (args.length < 3) return '#ERROR';
-      const year = parseInt(String(args[0]));
-      const month = parseInt(String(args[1]));
-      const day = parseInt(String(args[2]));
-      if (isNaN(year) || isNaN(month) || isNaN(day)) return '#ERROR';
-      return `${month}/${day}/${year}`;
-    }
-  },
-  AND: {
-    name: 'AND',
-    description: 'Returns TRUE if all its arguments are TRUE',
-    usage: 'AND(logical1, [logical2], ...)',
-    execute: (args, cells) => {
-      return args.every(arg => !!arg);
-    }
-  },
-  OR: {
-    name: 'OR',
-    description: 'Returns TRUE if any argument is TRUE',
-    usage: 'OR(logical1, [logical2], ...)',
-    execute: (args, cells) => {
-      return args.some(arg => !!arg);
-    }
-  },
-  NOT: {
-    name: 'NOT',
-    description: 'Reverses the logic of its argument',
-    usage: 'NOT(logical)',
-    execute: (args, cells) => {
-      if (args.length === 0) return '#ERROR';
-      return !args[0];
-    }
-  },
-  IFERROR: {
-    name: 'IFERROR',
-    description: 'Returns a value if an expression evaluates to an error; otherwise returns the result of the expression',
-    usage: 'IFERROR(value, value_if_error)',
-    execute: (args, cells) => {
-      if (args.length < 2) return '#ERROR';
-      const value = args[0];
-      return value === '#ERROR' ? args[1] : value;
-    }
-  }
+// Parse a cell reference like "A1" into row and column
+const parseCellRef = (cellRef: string): { col: string, row: number } => {
+  const match = cellRef.match(/([A-Z]+)([0-9]+)/);
+  if (!match) throw new Error(`Invalid cell reference: ${cellRef}`);
+  return { col: match[1], row: parseInt(match[2], 10) };
 };
 
-// Function to convert cell reference range into array of cell references
-function expandCellRangeToReferences(range: string): string[] {
-  const match = range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
-  if (!match) return [range];
+// Convert column letter to index (A -> 0, B -> 1, etc.)
+const colLetterToIndex = (colLetter: string): number => {
+  let result = 0;
+  for (let i = 0; i < colLetter.length; i++) {
+    result = result * 26 + (colLetter.charCodeAt(i) - 64);
+  }
+  return result - 1;
+};
+
+// Convert column index to letter (0 -> A, 1 -> B, etc.)
+const colIndexToLetter = (colIndex: number): string => {
+  let letter = '';
+  while (colIndex >= 0) {
+    letter = String.fromCharCode(65 + (colIndex % 26)) + letter;
+    colIndex = Math.floor(colIndex / 26) - 1;
+  }
+  return letter;
+};
+
+// Expand a range like "A1:B3" into an array of cell references
+const expandRange = (range: string): string[] => {
+  const [start, end] = range.split(':');
+  if (!start || !end) return [range]; // Not a range
   
-  const [_, startCol, startRow, endCol, endRow] = match;
-  const cellRefs = [];
+  const startCell = parseCellRef(start);
+  const endCell = parseCellRef(end);
   
-  const startColIndex = startCol.charCodeAt(0) - 65; // Convert 'A' to 0, 'B' to 1, etc.
-  const endColIndex = endCol.charCodeAt(0) - 65;
-  const startRowNum = parseInt(startRow);
-  const endRowNum = parseInt(endRow);
+  const startColIndex = colLetterToIndex(startCell.col);
+  const endColIndex = colLetterToIndex(endCell.col);
+  const startRow = startCell.row;
+  const endRow = endCell.row;
   
-  for (let col = startColIndex; col <= endColIndex; col++) {
-    for (let row = startRowNum; row <= endRowNum; row++) {
-      cellRefs.push(`${String.fromCharCode(65 + col)}${row}`);
+  const cells: string[] = [];
+  
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startColIndex; col <= endColIndex; col++) {
+      const colLetter = colIndexToLetter(col);
+      cells.push(`${colLetter}${row}`);
     }
   }
   
-  return cellRefs;
-}
+  return cells;
+};
 
-// Enhanced formula parser
-function parseFormula(formula: string, cells: Record<string, Cell>): string {
-  // Handle function calls first (e.g., SUM(A1:A5))
-  const functionRegex = /([A-Z]+)\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g;
-  let match;
-  let parsedFormula = formula;
+// Get the value of a cell reference, supporting ranges
+const getCellValue = (cellRef: string, cells: Record<string, Cell>, formula = ''): any => {
+  // Check for circular reference
+  if (formula.includes(cellRef)) {
+    throw new Error(`Circular reference detected: ${formula} references ${cellRef}`);
+  }
   
-  // Process functions from innermost to outermost
-  while ((match = functionRegex.exec(parsedFormula)) !== null) {
-    const [fullMatch, funcName, argsText] = match;
+  // Check if it's a range
+  if (cellRef.includes(':')) {
+    const cellRefs = expandRange(cellRef);
+    return cellRefs.map(ref => getCellValue(ref, cells, formula));
+  }
+  
+  const cell = cells[cellRef];
+  if (!cell) return 0;
+  
+  const value = cell.value;
+  
+  // If the cell contains a formula, evaluate it
+  if (value && value.startsWith('=')) {
+    return evaluateFormula(value.substring(1), cells, formula + cellRef);
+  }
+  
+  // Try to convert to number if possible
+  const numValue = parseFloat(value);
+  return isNaN(numValue) ? value : numValue;
+};
+
+// Parse the formula and evaluate it
+export const evaluateFormula = (formula: string, cells: Record<string, Cell>, parentFormula = ''): any => {
+  try {
+    // Extract function calls like SUM(A1:A5)
+    const functionRegex = /([A-Z]+)\(([^()]*|\([^()]*\))*\)/g;
+    let result = formula;
     
-    // Check if function exists
-    if (formulaFunctions[funcName as FormulaFunctionName]) {
-      const func = formulaFunctions[funcName as FormulaFunctionName];
+    // Replace all function calls with their evaluated results
+    let match;
+    while ((match = functionRegex.exec(formula)) !== null) {
+      const fullMatch = match[0];
+      const funcName = match[1];
+      const argsString = fullMatch.substring(funcName.length + 1, fullMatch.length - 1);
       
-      // Parse arguments
-      let args: any[] = [];
-      if (argsText.trim()) {
-        // Split by commas, but respect nested functions
-        const argsArray = argsText.split(',').map(arg => arg.trim());
+      // Split arguments by comma, but respect nested parentheses
+      const args = [];
+      let currentArg = '';
+      let parenCount = 0;
+      
+      for (let i = 0; i < argsString.length; i++) {
+        const char = argsString[i];
+        if (char === '(' ) parenCount++;
+        else if (char === ')') parenCount--;
         
-        // Process each argument
-        args = argsArray.map(arg => {
-          // Check if it's a range (e.g., A1:A5)
-          if (arg.includes(':')) {
-            const cellRefs = expandCellRangeToReferences(arg);
-            return cellRefs.map(ref => {
-              if (cells[ref]) {
-                const cellValue = cells[ref].value;
-                // If the cell contains a formula, evaluate it recursively
-                if (cellValue && cellValue.startsWith('=')) {
-                  return evaluateFormula(cellValue.substring(1), cells);
-                }
-                return isNaN(Number(cellValue)) ? cellValue : Number(cellValue);
-              }
-              return 0;
-            });
-          } 
-          // Check if it's a cell reference
-          else if (/^[A-Z]+\d+$/.test(arg)) {
-            if (cells[arg]) {
-              const cellValue = cells[arg].value;
-              // If the cell contains a formula, evaluate it recursively
-              if (cellValue && cellValue.startsWith('=')) {
-                return evaluateFormula(cellValue.substring(1), cells);
-              }
-              return isNaN(Number(cellValue)) ? cellValue : Number(cellValue);
-            }
-            return 0;
-          } 
-          // Otherwise, it's a literal value
-          else {
-            return isNaN(Number(arg)) ? arg : Number(arg);
-          }
-        });
-        
-        // Flatten array arguments for functions like SUM
-        if (funcName === 'SUM' || funcName === 'AVERAGE' || funcName === 'MIN' || funcName === 'MAX' || funcName === 'COUNT') {
-          args = args.flat();
+        if (char === ',' && parenCount === 0) {
+          args.push(currentArg.trim());
+          currentArg = '';
+        } else {
+          currentArg += char;
         }
       }
       
-      // Execute function
-      try {
-        const result = func.execute(args, cells);
+      if (currentArg) args.push(currentArg.trim());
+      
+      // Process each argument
+      const processedArgs = args.map(arg => {
+        // If arg is a cell reference or range
+        if (/^[A-Z]+[0-9]+$/.test(arg) || /^[A-Z]+[0-9]+:[A-Z]+[0-9]+$/.test(arg)) {
+          return getCellValue(arg, cells, parentFormula);
+        }
         
-        // Replace the function call in the formula with its result
-        parsedFormula = parsedFormula.replace(fullMatch, String(result));
+        // If arg is a nested formula
+        if (arg.includes('(')) {
+          return evaluateFormula(arg, cells, parentFormula);
+        }
         
-        // Reset regex to start over with the new formula string
-        functionRegex.lastIndex = 0;
-      } catch (error) {
-        console.error(`Error executing ${funcName}:`, error);
-        parsedFormula = parsedFormula.replace(fullMatch, '#ERROR');
-        functionRegex.lastIndex = 0;
+        // If arg is a number
+        const num = parseFloat(arg);
+        if (!isNaN(num)) return num;
+        
+        // Otherwise it's a string
+        return arg.replace(/^"(.*)"$/, '$1'); // Remove quotes
+      });
+      
+      // Execute the function
+      const func = formulaFunctions[funcName];
+      if (!func) throw new Error(`Unknown function: ${funcName}`);
+      
+      let funcResult;
+      
+      // Handle special case for functions that process ranges
+      if (funcName === 'SUM' || funcName === 'AVERAGE' || funcName === 'MIN' || funcName === 'MAX' || funcName === 'COUNT') {
+        // Flatten nested arrays from range arguments
+        const flatArgs = processedArgs.flat(Infinity);
+        funcResult = func.execute(...flatArgs);
+      } else {
+        funcResult = func.execute(...processedArgs);
       }
-    } else {
-      // Unknown function
-      parsedFormula = parsedFormula.replace(fullMatch, '#UNKNOWN_FUNCTION');
-      functionRegex.lastIndex = 0;
+      
+      // Replace the function call with its result
+      result = result.replace(fullMatch, funcResult.toString());
     }
-  }
-  
-  return parsedFormula;
-}
-
-export function evaluateFormula(formula: string, cells: Record<string, Cell>): string {
-  try {
-    // Remove all spaces
-    formula = formula.replace(/\s+/g, '');
     
-    // Parse and evaluate functions
-    const parsedFormula = parseFormula(formula, cells);
-    
-    // Basic cell reference pattern
-    const cellPattern = /[A-Z]+\d+/g;
-    
-    // Replace remaining cell references with their values
-    const formulaWithValues = parsedFormula.replace(cellPattern, (cellId) => {
-      const cellData = cells[cellId];
-      if (!cellData) return '0';
-      
-      const cellValue = cellData.value;
-      
-      // Handle recursive formulas
-      if (cellValue && cellValue.startsWith('=')) {
-        return evaluateFormula(cellValue.substring(1), cells);
-      }
-      
-      // If it's a number, return it, otherwise return 0
-      return !isNaN(Number(cellValue)) ? cellValue : '0';
+    // Process cell references that are not inside a function call
+    const cellRegex = /[A-Z]+[0-9]+/g;
+    result = result.replace(cellRegex, (cellRef) => {
+      return getCellValue(cellRef, cells, parentFormula).toString();
     });
     
-    try {
-      // Use Function constructor to evaluate the expression safely
-      const result = Function(`"use strict"; return (${formulaWithValues})`)();
-      
-      // Format the result
-      if (typeof result === 'number') {
-        // Check if it's an integer
-        if (Number.isInteger(result)) {
-          return result.toString();
-        } else {
-          // Return with up to 2 decimal places, but only if needed
-          return result.toFixed(2).replace(/\.00$/, '');
-        }
-      }
-      
-      return result.toString();
-    } catch (error) {
-      console.error('Formula evaluation error:', error);
-      return '#ERROR';
-    }
-  } catch (error) {
-    console.error('Formula parsing error:', error);
-    return '#ERROR';
+    // Process operators
+    // This is a simplified version - a real implementation would handle operator precedence
+    // and support more operations
+    const evalResult = new Function(`return ${result}`)();
+    return evalResult;
+  } catch (err: any) {
+    console.error('Formula evaluation error:', err.message);
+    return `#ERROR! ${err.message}`;
   }
-}
+};
 
 // Helper function to get cell range data
 export function getCellRangeData(startCell: string, endCell: string, cells: Record<string, Cell>): any[][] {

@@ -40,6 +40,7 @@ interface ExcelRibbonProps {
   onFill?: (direction: 'down' | 'right') => void;
   onClearFormatting?: () => void;
   onFind?: () => void;
+  onFindReplace?: () => void; // Add this prop for find and replace
   onInsert?: (type: 'cell' | 'row' | 'column') => void;
   activeCellFormat: {
     bold?: boolean;
@@ -85,6 +86,7 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   onFill = () => {},
   onClearFormatting = () => {},
   onFind = () => {},
+  onFindReplace = () => {}, // Initialize the prop with default function
   onInsert = () => {},
   activeCellFormat 
 }) => {
@@ -158,6 +160,7 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
             onFill={onFill}
             onClearFormatting={onClearFormatting}
             onFind={onFind}
+            onFindReplace={onFindReplace} // Pass the find-replace handler
             onSortAsc={onSortAsc}
             onSortDesc={onSortDesc}
           />

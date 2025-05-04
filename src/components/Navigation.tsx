@@ -19,8 +19,8 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
   };
 
   const handleToggleMute = () => {
-    voiceAssistant.toggleMute();
-    setIsMuted(!isMuted);
+    const muteState = voiceAssistant.toggleMute();
+    setIsMuted(muteState);
   };
 
   return (
@@ -38,17 +38,17 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
         size="sm"
         onClick={handleDemoData}
         className="text-xs"
-        data-voice-hover="Click here to load demo data for practice"
+        data-voice-hover="Load demo data for practice"
       >
         Load Demo Data
       </Button>
       
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         className="h-7 w-7 ml-2"
         onClick={handleToggleMute}
-        data-voice-hover={isMuted ? "Click to unmute voice assistant" : "Click to mute voice assistant"}
+        data-voice-hover={isMuted ? "Unmute voice assistant" : "Mute voice assistant"}
       >
         {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
       </Button>

@@ -5,6 +5,44 @@ import { createVoiceCommandHandler, VoiceCommand } from './voiceCommands';
 let recognition: any = null;
 let commandHandlers: any = {};
 let voiceCommands: any = null;
+let isMuted = false;
+
+// Create a singleton for voice assistant
+const voiceAssistant = {
+  speak: (text: string) => {
+    if (isMuted) return;
+    
+    try {
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.rate = 1.0;
+      speech.pitch = 1.0;
+      speech.volume = 1.0;
+      window.speechSynthesis.speak(speech);
+    } catch (e) {
+      console.error('Speech synthesis not supported', e);
+    }
+  },
+  
+  toggleMute: () => {
+    isMuted = !isMuted;
+    if (isMuted) {
+      window.speechSynthesis.cancel();
+    }
+    return isMuted;
+  },
+  
+  bindHoverSpeak: () => {
+    document.addEventListener('mouseover', (e) => {
+      const target = e.target as HTMLElement;
+      const voiceHover = target.getAttribute('data-voice-hover');
+      
+      if (voiceHover && !isMuted) {
+        // Show a tooltip with the voice command
+        target.setAttribute('title', `Say: "${voiceHover}"`);
+      }
+    });
+  }
+};
 
 export const initVoiceAssistant = (handlers: Record<string, Function>) => {
   commandHandlers = handlers;
@@ -115,3 +153,6 @@ const enableVoiceHover = () => {
 export const getVoiceCommands = () => {
   return voiceCommands ? voiceCommands.commands : [];
 };
+
+// Export the voice assistant as default
+export default voiceAssistant;

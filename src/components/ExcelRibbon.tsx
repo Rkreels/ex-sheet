@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ClipboardSection from './ribbon/ClipboardSection';
 import FontSection from './ribbon/FontSection';
@@ -7,7 +6,7 @@ import NumberSection from './ribbon/NumberSection';
 import CellsSection from './ribbon/CellsSection';
 import EditingSection from './ribbon/EditingSection';
 import HistorySection from './ribbon/HistorySection';
-import { ChartData, NumberFormat } from '../types/sheet';
+import { ChartData, NumberFormat, CellSelection } from '../types/sheet';
 import { Toaster } from 'sonner';
 
 interface ExcelRibbonProps {
@@ -176,7 +175,8 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
                     type: 'bar',
                     title: 'Sales Chart',
                     data: [],
-                    labels: []
+                    labels: [],
+                    selection: { startCell: 'A1', endCell: 'B5' } // Fixed error - added required properties
                   })}
                   data-voice-command="insert bar chart"
                 >

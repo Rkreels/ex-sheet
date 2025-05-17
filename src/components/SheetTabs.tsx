@@ -11,6 +11,8 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { toast } from 'sonner';
+import voiceAssistant from '../utils/voiceAssistant';
 
 interface SheetTabsProps {
   sheets: Sheet[];
@@ -31,6 +33,8 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
 }) => {
   const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
@@ -43,12 +47,15 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
   const handleStartRename = (sheetId: string, currentName: string) => {
     setEditingSheetId(sheetId);
     setEditValue(currentName);
+    voiceAssistant.speak(`Renaming sheet ${currentName}`);
   };
 
   const handleRenameSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (editingSheetId && editValue.trim()) {
       onRenameSheet(editingSheetId, editValue.trim());
+      toast.success(`Sheet renamed to ${editValue.trim()}`);
+      voiceAssistant.speak(`Sheet renamed to ${editValue.trim()}`);
     }
     setEditingSheetId(null);
   };
@@ -65,13 +72,38 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
     handleRenameSubmit();
   };
 
+  const handleDeleteSheet = (sheetId: string) => {
+    // Don't allow deleting the only sheet
+    if (sheets.length <= 1) {
+      toast.error("Cannot delete the only sheet");
+      voiceAssistant.speak("Cannot delete the only sheet");
+      return;
+    }
+    
+    onDeleteSheet(sheetId);
+  };
+
+  // Handle horizontal scrolling with buttons
+  const scrollLeft = () => {
+    if (tabsContainerRef.current) {
+      tabsContainerRef.current.scrollBy({ left: -100, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (tabsContainerRef.current) {
+      tabsContainerRef.current.scrollBy({ left: 100, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="flex items-center h-7 bg-gray-200 border-t border-gray-300">
       <Button 
         variant="ghost" 
         size="icon" 
         className="h-7 w-7 rounded-none"
-        data-voice-hover="Previous sheet"
+        onClick={scrollLeft}
+        data-voice-command="previous sheet"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -79,12 +111,13 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
         variant="ghost" 
         size="icon" 
         className="h-7 w-7 rounded-none"
-        data-voice-hover="Next sheet"
+        onClick={scrollRight}
+        data-voice-command="next sheet"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
       
-      <div className="flex border-l border-gray-300">
+      <div className="flex border-l border-gray-300 overflow-hidden" ref={tabsContainerRef}>
         {sheets.map((sheet) => (
           <ContextMenu key={sheet.id}>
             <ContextMenuTrigger>
@@ -97,7 +130,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
                 )}
                 onClick={() => onSheetSelect(sheet.id)}
                 onDoubleClick={() => handleStartRename(sheet.id, sheet.name)}
-                data-voice-hover={`Switch to ${sheet.name}`}
+                data-voice-command={`switch to ${sheet.name}`}
               >
                 {editingSheetId === sheet.id ? (
                   <form onSubmit={handleRenameSubmit} className="w-full">
@@ -117,7 +150,10 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuItem onClick={() => handleStartRename(sheet.id, sheet.name)}>
+              <ContextMenuItem 
+                onClick={() => handleStartRename(sheet.id, sheet.name)}
+                data-voice-command={`rename ${sheet.name}`}
+              >
                 <Edit2 className="h-3.5 w-3.5 mr-2" />
                 Rename
               </ContextMenuItem>
@@ -126,10 +162,11 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={() => {
                   if (sheets.length > 1) {
-                    onDeleteSheet(sheet.id);
+                    handleDeleteSheet(sheet.id);
                   }
                 }}
                 disabled={sheets.length <= 1}
+                data-voice-command={`delete ${sheet.name}`}
               >
                 <X className="h-3.5 w-3.5 mr-2" />
                 Delete
@@ -144,7 +181,7 @@ const SheetTabs: React.FC<SheetTabsProps> = ({
         size="icon" 
         className="h-7 w-7 rounded-none"
         onClick={onAddSheet}
-        data-voice-hover="Add new sheet"
+        data-voice-command="add new sheet"
       >
         <Plus className="h-4 w-4" />
       </Button>

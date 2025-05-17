@@ -24,12 +24,33 @@ const CellEditor: React.FC<CellEditorProps> = ({ value, onChange, onBlur, onKeyD
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Support keyboard shortcuts
     if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       onKeyDown(e);
     } else if (e.key === 'Tab') {
       e.preventDefault();
       onKeyDown(e);
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       onKeyDown(e);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || 
+               e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      // Don't stop propagation for navigation keys when at boundaries
+      const input = inputRef.current;
+      if (input) {
+        const atStart = input.selectionStart === 0;
+        const atEnd = input.selectionEnd === input.value.length;
+        
+        // Only prevent default if not at boundaries or with shift/ctrl modifiers
+        if ((e.key === 'ArrowLeft' && !atStart) || 
+            (e.key === 'ArrowRight' && !atEnd) ||
+            e.shiftKey || e.ctrlKey) {
+          e.stopPropagation();
+        } else {
+          onKeyDown(e);
+        }
+      } else {
+        onKeyDown(e);
+      }
     } else {
       onKeyDown(e);
     }

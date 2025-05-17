@@ -6,6 +6,8 @@ import { Cell } from '../types/sheet';
 import CellContextMenu from './CellContextMenu';
 import CellDisplay from './cell/CellDisplay';
 import CellEditor from './cell/CellEditor';
+import CellInteractions from './cell/CellInteractions';
+import CellFormatPainter from './cell/CellFormatPainter';
 
 interface SpreadsheetCellProps {
   cellId: string;
@@ -54,8 +56,6 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   const [editValue, setEditValue] = useState('');
   const [displayValue, setDisplayValue] = useState('');
   const [dragOver, setDragOver] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
-  const [lastClickTime, setLastClickTime] = useState(0);
 
   // Calculate display value for formulas and update when cells change
   useEffect(() => {
@@ -84,29 +84,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     }
   }, [isActive, cellData]);
 
-  // Handle click with improved timing detection for edit mode
-  const handleCellClick = (e: React.MouseEvent) => {
-    onCellClick(rowIndex, colIndex);
-    
-    const currentTime = new Date().getTime();
-    const timeDiff = currentTime - lastClickTime;
-    
-    // If this is a second click within 300ms, treat as double click
-    if (timeDiff < 300 && isActive) {
-      startEditing();
-    } else if (isActive) {
-      // If cell is already active and we're clicking on it again, start editing
-      startEditing();
-    }
-    
-    setLastClickTime(currentTime);
-    
-    // Handle format painter case
-    if (document.body.style.cursor === 'cell') {
-      handleFormatPainted();
-    }
-  };
-  
+  // Start editing function for cell
   const startEditing = () => {
     setEditing(true);
     setEditValue(cellData?.value || '');
@@ -220,7 +198,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         height: `${height}px`,
         minHeight: `${height}px`,
       }}
-      onClick={handleCellClick}
+      onClick={() => onCellClick(rowIndex, colIndex)}
       onDoubleClick={() => onDoubleClick(rowIndex, colIndex)}
       onMouseDown={(e) => onCellMouseDown(rowIndex, colIndex, e)}
       onMouseOver={() => onCellMouseOver(rowIndex, colIndex)}
@@ -231,6 +209,9 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       onDragStart={() => onCellDragStart(cellId)} 
       onDragEnd={onCellDragEnd}
       data-cell-id={cellId}
+      aria-label={`Cell ${cellId}`}
+      data-voice-control="true"
+      data-voice-hover={`Cell ${cellId}`}
     >
       {isActive && editing ? (
         <CellEditor

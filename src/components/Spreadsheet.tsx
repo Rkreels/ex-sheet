@@ -3,6 +3,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Cell, CellSelection } from '../types/sheet';
 import SpreadsheetHeader from './SpreadsheetHeader';
 import SpreadsheetRow from './SpreadsheetRow';
+import SelectionHandler from './spreadsheet/SelectionHandler';
+import { isCellInSelection, getColumnLabel, getCellId } from './spreadsheet/SelectionUtils';
+import voiceAssistant from '../utils/voiceAssistant';
 
 interface SpreadsheetProps {
   cells: Record<string, Cell>;
@@ -27,6 +30,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   onColumnWidthChange,
   onRowHeightChange
 }) => {
+  // State hooks for spreadsheet functionality
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [rows, setRows] = useState(100);
@@ -74,12 +78,14 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     // If user has scrolled near the bottom, add more rows
     if (scrollTop + clientHeight >= scrollHeight - 200) {
       setRows(prevRows => prevRows + 50);
+      voiceAssistant.speak("Added more rows");
     }
     
     // Check horizontal scroll to add more columns if needed
     const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
     if (scrollLeft + clientWidth >= scrollWidth - 200) {
       setColumns(prevCols => prevCols + 10);
+      voiceAssistant.speak("Added more columns");
     }
   }, [calculateVisibleRows]);
 
@@ -99,21 +105,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     };
   }, [handleScroll]);
 
-  const getColumnLabel = (index: number) => {
-    // Handle column labels beyond Z (AA, AB, etc.)
-    if (index < 26) {
-      return String.fromCharCode(65 + index); // A, B, C, ...
-    } else {
-      const firstChar = String.fromCharCode(65 + Math.floor(index / 26) - 1);
-      const secondChar = String.fromCharCode(65 + (index % 26));
-      return `${firstChar}${secondChar}`;
-    }
-  };
-
-  const getCellId = (rowIndex: number, colIndex: number) => {
-    return `${getColumnLabel(colIndex)}${rowIndex + 1}`;
-  };
-
+  // Cell interaction handlers
   const handleCellClick = (rowIndex: number, colIndex: number) => {
     const cellId = getCellId(rowIndex, colIndex);
     onCellSelect(cellId);
@@ -124,6 +116,8 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     } else {
       setEditing(false);
     }
+    
+    voiceAssistant.speak(`Selected cell ${cellId}`);
   };
 
   const handleCellMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent) => {
@@ -131,6 +125,8 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     setIsSelecting(true);
     setSelection({ startCell: cellId, endCell: cellId });
     onCellSelect(cellId);
+    
+    voiceAssistant.speak(`Started selection from ${cellId}`);
   };
 
   const handleCellMouseOver = (rowIndex: number, colIndex: number) => {
@@ -140,21 +136,22 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     }
   };
 
-  const handleMouseUp = () => {
-    setIsSelecting(false);
-  };
-
   const handleDoubleClick = (rowIndex: number, colIndex: number) => {
     const cellId = getCellId(rowIndex, colIndex);
     onCellSelect(cellId);
     setEditing(true);
     setEditValue(cells[cellId]?.value || '');
+    
+    voiceAssistant.speak(`Editing cell ${cellId}`);
   };
 
+  // Drag and drop handlers
   const handleCellDragStart = (cellId: string) => {
     setDraggedCell(cellId);
     // Set visual drag effect
     document.body.style.cursor = 'move';
+    
+    voiceAssistant.speak(`Dragging cell ${cellId}`);
   };
 
   const handleCellDragEnd = () => {
@@ -179,30 +176,8 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
       // If target was empty, clear source
       onCellChange(draggedCell, '');
     }
-  };
-
-  const isCellInSelection = (cellId: string) => {
-    if (!selection) return false;
     
-    const [startCol, startRowStr] = selection.startCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-    const [endCol, endRowStr] = selection.endCell.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-    const [cellCol, cellRowStr] = cellId.match(/([A-Z]+)(\d+)/)?.slice(1) || [];
-    
-    if (!startCol || !startRowStr || !endCol || !endRowStr || !cellCol || !cellRowStr) return false;
-    
-    const startColIdx = startCol.charCodeAt(0) - 65;
-    const startRowIdx = parseInt(startRowStr, 10) - 1;
-    const endColIdx = endCol.charCodeAt(0) - 65;
-    const endRowIdx = parseInt(endRowStr, 10) - 1;
-    const cellColIdx = cellCol.charCodeAt(0) - 65;
-    const cellRowIdx = parseInt(cellRowStr, 10) - 1;
-    
-    const minColIdx = Math.min(startColIdx, endColIdx);
-    const maxColIdx = Math.max(startColIdx, endColIdx);
-    const minRowIdx = Math.min(startRowIdx, endRowIdx);
-    const maxRowIdx = Math.max(startRowIdx, endRowIdx);
-    
-    return cellColIdx >= minColIdx && cellColIdx <= maxColIdx && cellRowIdx >= minRowIdx && cellRowIdx <= maxRowIdx;
+    voiceAssistant.speak(`Moved cell ${draggedCell} to ${targetCellId}`);
   };
 
   // Column selection handler
@@ -218,6 +193,8 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
       // New selection
       setSelection({ startCell, endCell });
     }
+    
+    voiceAssistant.speak(`Selected column ${colLetter}`);
   };
 
   // Row selection handler
@@ -232,6 +209,8 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
       // New selection
       setSelection({ startCell, endCell });
     }
+    
+    voiceAssistant.speak(`Selected row ${rowIndex + 1}`);
   };
 
   // Render only visible rows for better performance
@@ -255,7 +234,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
         onCellDragStart={handleCellDragStart}
         onCellDragEnd={handleCellDragEnd}
         onCellValueChange={onCellChange}
-        isCellInSelection={isCellInSelection}
+        isCellInSelection={(cellId) => isCellInSelection(cellId, selection)}
         onRowHeightChange={onRowHeightChange}
         onRowHeaderClick={handleRowHeaderClick}
       />
@@ -273,29 +252,34 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     <div 
       className="relative overflow-auto w-full h-full bg-white" 
       ref={containerRef}
-      onMouseUp={handleMouseUp}
+      data-voice-area="spreadsheet"
     >
-      <SpreadsheetHeader 
-        columns={columns}
-        columnWidths={columnWidths}
-        onColumnWidthChange={onColumnWidthChange}
-        onColumnHeaderClick={handleColumnHeaderClick}
-      />
-      
-      <div className="flex flex-col">
-        {/* Top spacer div */}
-        {topSpacerHeight > 0 && (
-          <div style={{ height: `${topSpacerHeight}px` }} />
-        )}
+      <SelectionHandler 
+        selection={selection} 
+        setIsSelecting={setIsSelecting}
+      >
+        <SpreadsheetHeader 
+          columns={columns}
+          columnWidths={columnWidths}
+          onColumnWidthChange={onColumnWidthChange}
+          onColumnHeaderClick={handleColumnHeaderClick}
+        />
         
-        {/* Visible rows */}
-        {visibleRowsList}
-        
-        {/* Bottom spacer div */}
-        {bottomSpacerHeight > 0 && (
-          <div style={{ height: `${bottomSpacerHeight}px` }} />
-        )}
-      </div>
+        <div className="flex flex-col">
+          {/* Top spacer div */}
+          {topSpacerHeight > 0 && (
+            <div style={{ height: `${topSpacerHeight}px` }} />
+          )}
+          
+          {/* Visible rows */}
+          {visibleRowsList}
+          
+          {/* Bottom spacer div */}
+          {bottomSpacerHeight > 0 && (
+            <div style={{ height: `${bottomSpacerHeight}px` }} />
+          )}
+        </div>
+      </SelectionHandler>
     </div>
   );
 };

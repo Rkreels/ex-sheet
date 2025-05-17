@@ -1,11 +1,15 @@
 
 import { useState, useCallback } from 'react';
-import { Sheet, Cell, UndoRedoState } from '../types/sheet';
+import { Sheet, Cell, UndoRedoState, CellSelection } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { toast } from 'sonner';
 import voiceAssistant from '../utils/voiceAssistant';
+import { useUndoRedo } from './state/useUndoRedo';
+import { useSheetManagement } from './state/useSheetManagement';
+import { useCellManagement } from './state/useCellManagement';
 
 export const useSheetState = () => {
+  // Initial state
   const [sheets, setSheets] = useState<Sheet[]>([
     { 
       id: 'sheet1', 
@@ -19,14 +23,15 @@ export const useSheetState = () => {
   ]);
   const [activeSheetId, setActiveSheetId] = useState('sheet1');
   const [formulaValue, setFormulaValue] = useState('');
-  const [cellSelection, setCellSelection] = useState<{startCell: string, endCell: string} | null>(null);
+  const [cellSelection, setCellSelection] = useState<CellSelection | null>(null);
   const [clipboard, setClipboard] = useState<{cells: Record<string, Cell>, startCell: string} | null>(null);
 
+  // Derived state
   const activeSheet = sheets.find(sheet => sheet.id === activeSheetId) || sheets[0];
   const activeCell = activeSheet?.activeCell || 'A1';
   const activeCellValue = activeSheet?.cells[activeCell]?.value || '';
 
-  // Function to save current state before making changes
+  // Function to save state for undo/redo
   const saveState = useCallback(() => {
     setSheets(prevSheets => 
       prevSheets.map(sheet => 
@@ -46,103 +51,40 @@ export const useSheetState = () => {
     );
   }, [activeSheetId]);
 
-  const handleCellChange = (cellId: string, value: string) => {
-    saveState();
-    setSheets(prevSheets => 
-      prevSheets.map(sheet => 
-        sheet.id === activeSheetId 
-          ? {
-              ...sheet,
-              cells: {
-                ...sheet.cells,
-                [cellId]: {
-                  ...sheet.cells[cellId],
-                  value,
-                }
-              }
-            }
-          : sheet
-      )
-    );
-  };
+  // Import and use the smaller, more focused hooks
+  const { handleUndo, handleRedo } = useUndoRedo({
+    sheets,
+    setSheets,
+    activeSheetId
+  });
 
-  const handleCellSelect = (cellId: string) => {
-    setSheets(prevSheets => 
-      prevSheets.map(sheet => 
-        sheet.id === activeSheetId 
-          ? { ...sheet, activeCell: cellId }
-          : sheet
-      )
-    );
-    
-    const cellValue = activeSheet.cells[cellId]?.value || '';
-    setFormulaValue(cellValue);
-    voiceAssistant.speak(`Selected cell ${cellId}`);
-  };
+  const { 
+    addNewSheet,
+    handleSheetSelect,
+    handleRenameSheet,
+    handleDeleteSheet
+  } = useSheetManagement({
+    sheets,
+    setSheets,
+    activeSheetId,
+    setActiveSheetId,
+    setFormulaValue
+  });
 
-  const handleCellSelectionChange = (selection: {startCell: string, endCell: string} | null) => {
-    setCellSelection(selection);
-  };
-
-  const handleFormulaChange = (value: string) => {
-    setFormulaValue(value);
-    handleCellChange(activeCell, value);
-  };
-
-  const addNewSheet = () => {
-    const newSheetId = `sheet${sheets.length + 1}`;
-    const newSheetName = `Sheet${sheets.length + 1}`;
-    
-    setSheets([
-      ...sheets, 
-      { 
-        id: newSheetId, 
-        name: newSheetName, 
-        cells: {}, 
-        activeCell: 'A1', 
-        columnWidths: {}, 
-        rowHeights: {},
-        history: { past: [], future: [] }
-      }
-    ]);
-    setActiveSheetId(newSheetId);
-  };
-
-  const handleSheetSelect = (sheetId: string) => {
-    setActiveSheetId(sheetId);
-    const sheet = sheets.find(s => s.id === sheetId) || sheets[0];
-    setFormulaValue(sheet.cells[sheet.activeCell]?.value || '');
-  };
-
-  const handleRenameSheet = (sheetId: string, newName: string) => {
-    setSheets(prevSheets => 
-      prevSheets.map(sheet => 
-        sheet.id === sheetId 
-          ? { ...sheet, name: newName }
-          : sheet
-      )
-    );
-    toast.success(`Sheet renamed to ${newName}`);
-    voiceAssistant.speak(`Sheet renamed to ${newName}`);
-  };
-
-  const handleDeleteSheet = (sheetId: string) => {
-    // Don't allow deleting the last sheet
-    if (sheets.length <= 1) {
-      toast.error("Cannot delete the only sheet");
-      return;
-    }
-    
-    // If deleting the active sheet, switch to another sheet first
-    if (sheetId === activeSheetId) {
-      const otherSheetId = sheets.find(s => s.id !== sheetId)?.id || '';
-      setActiveSheetId(otherSheetId);
-    }
-    
-    setSheets(prevSheets => prevSheets.filter(sheet => sheet.id !== sheetId));
-    toast.success("Sheet deleted");
-    voiceAssistant.speak("Sheet deleted");
-  };
+  const { 
+    handleCellChange,
+    handleCellSelect,
+    handleCellSelectionChange,
+    handleFormulaChange
+  } = useCellManagement({
+    activeSheet,
+    activeSheetId,
+    activeCell,
+    setSheets,
+    saveState,
+    setFormulaValue,
+    setCellSelection
+  });
 
   const handleDemoData = (demoData: Record<string, any>) => {
     saveState();
@@ -154,68 +96,6 @@ export const useSheetState = () => {
       )
     );
     toast.success("Demo data loaded successfully!");
-  };
-  
-  // Undo functionality
-  const handleUndo = () => {
-    const sheet = sheets.find(s => s.id === activeSheetId);
-    if (!sheet || !sheet.history || sheet.history.past.length === 0) {
-      toast.error("Nothing to undo");
-      return;
-    }
-
-    const lastPast = sheet.history.past.pop();
-    if (!lastPast) return;
-
-    setSheets(prevSheets => 
-      prevSheets.map(s => 
-        s.id === activeSheetId 
-          ? {
-              ...s,
-              cells: lastPast.cells,
-              history: {
-                past: [...(s.history?.past || [])],
-                future: [
-                  { cells: { ...s.cells } },
-                  ...(s.history?.future || [])
-                ]
-              }
-            }
-          : s
-      )
-    );
-    toast.success("Undo successful");
-  };
-  
-  // Redo functionality
-  const handleRedo = () => {
-    const sheet = sheets.find(s => s.id === activeSheetId);
-    if (!sheet || !sheet.history || sheet.history.future.length === 0) {
-      toast.error("Nothing to redo");
-      return;
-    }
-
-    const firstFuture = sheet.history.future.shift();
-    if (!firstFuture) return;
-
-    setSheets(prevSheets => 
-      prevSheets.map(s => 
-        s.id === activeSheetId 
-          ? {
-              ...s,
-              cells: firstFuture.cells,
-              history: {
-                past: [
-                  ...(s.history?.past || []),
-                  { cells: { ...s.cells } }
-                ],
-                future: [...(s.history?.future || [])]
-              }
-            }
-          : s
-      )
-    );
-    toast.success("Redo successful");
   };
 
   return {

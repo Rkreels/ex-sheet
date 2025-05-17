@@ -16,9 +16,21 @@ const SelectionHandler: React.FC<SelectionHandlerProps> = ({
   const handleMouseUp = () => {
     setIsSelecting(false);
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle keyboard navigation and selection
+    if (e.key === 'Escape') {
+      setIsSelecting(false);
+    }
+  };
 
   return (
-    <div onMouseUp={handleMouseUp}>
+    <div 
+      onMouseUp={handleMouseUp}
+      onKeyDown={handleKeyDown}
+      tabIndex={0} // Make div focusable for keyboard events
+      className="outline-none h-full" // Remove outline and ensure full height
+    >
       {children}
     </div>
   );

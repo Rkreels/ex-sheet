@@ -54,66 +54,99 @@ interface HomeTabContentProps {
   };
 }
 
-const HomeTabContent: React.FC<HomeTabContentProps> = (props) => {
+const HomeTabContent: React.FC<HomeTabContentProps> = ({ 
+  onCut, 
+  onCopy, 
+  onPaste, 
+  onFormatPainter, 
+  onBoldClick, 
+  onItalicClick, 
+  onUnderlineClick, 
+  onFontSizeChange, 
+  onFontFamilyChange, 
+  onColorChange, 
+  onBackgroundColorChange, 
+  onCurrencyFormat, 
+  onPercentClick, 
+  onAlignLeftClick, 
+  onAlignCenterClick, 
+  onAlignRightClick, 
+  onWrapText, 
+  onMergeCenter, 
+  onNumberFormatChange, 
+  onDelete, 
+  onInsert, 
+  onAutoSum, 
+  onFill, 
+  onClearFormatting, 
+  onFind, 
+  onFindReplace, 
+  onSortAsc, 
+  onSortDesc, 
+  onUndo, 
+  onRedo, 
+  onPrint, 
+  activeCellFormat 
+}) => {
   return (
     <>
       <ClipboardSection
-        onCut={props.onCut}
-        onCopy={props.onCopy}
-        onPaste={props.onPaste}
-        onFormatPainter={props.onFormatPainter}
+        onCut={onCut}
+        onCopy={onCopy}
+        onPaste={onPaste}
+        onFormatPainter={onFormatPainter}
       />
       
       <FontSection
-        onBoldClick={props.onBoldClick}
-        onItalicClick={props.onItalicClick}
-        onUnderlineClick={props.onUnderlineClick}
-        onFontSizeChange={props.onFontSizeChange}
-        onFontFamilyChange={props.onFontFamilyChange}
-        onColorChange={props.onColorChange}
-        onBackgroundColorChange={props.onBackgroundColorChange}
-        onCurrencyFormat={props.onCurrencyFormat}
-        onPercentClick={props.onPercentClick}
-        activeCellFormat={props.activeCellFormat}
+        onBoldClick={onBoldClick}
+        onItalicClick={onItalicClick}
+        onUnderlineClick={onUnderlineClick}
+        onFontSizeChange={onFontSizeChange}
+        onFontFamilyChange={onFontFamilyChange}
+        onColorChange={onColorChange}
+        onBackgroundColorChange={onBackgroundColorChange}
+        onCurrencyFormat={onCurrencyFormat}
+        onPercentClick={onPercentClick}
+        activeCellFormat={activeCellFormat}
       />
       
       <AlignmentSection
-        onAlignLeftClick={props.onAlignLeftClick}
-        onAlignCenterClick={props.onAlignCenterClick}
-        onAlignRightClick={props.onAlignRightClick}
-        onWrapText={props.onWrapText}
-        onMergeCenter={props.onMergeCenter}
-        activeCellFormat={props.activeCellFormat}
+        onAlignLeftClick={onAlignLeftClick}
+        onAlignCenterClick={onAlignCenterClick}
+        onAlignRightClick={onAlignRightClick}
+        onWrapText={onWrapText}
+        onMergeCenter={onMergeCenter}
+        activeCellFormat={activeCellFormat}
       />
       
       <NumberSection
-        onNumberFormatChange={props.onNumberFormatChange}
-        onPercentClick={props.onPercentClick}
-        onCurrencyFormat={props.onCurrencyFormat}
-        activeCellFormat={props.activeCellFormat}
+        onNumberFormatChange={onNumberFormatChange}
+        onPercentClick={onPercentClick}
+        onCurrencyFormat={onCurrencyFormat}
+        activeCellFormat={activeCellFormat}
       />
       
       <CellsSection
-        onDelete={props.onDelete}
-        onInsert={props.onInsert}
-        onBackgroundColorChange={props.onBackgroundColorChange}
-        activeCellFormat={props.activeCellFormat}
+        onDelete={onDelete}
+        onInsert={onInsert}
+        onBackgroundColorChange={onBackgroundColorChange}
+        activeCellFormat={activeCellFormat}
       />
       
       <EditingSection
-        onAutoSum={props.onAutoSum}
-        onFill={props.onFill}
-        onClearFormatting={props.onClearFormatting}
-        onFind={props.onFind}
-        onFindReplace={props.onFindReplace}
-        onSortAsc={props.onSortAsc}
-        onSortDesc={props.onSortDesc}
+        onAutoSum={onAutoSum}
+        onFill={onFill}
+        onClearFormatting={onClearFormatting}
+        onFind={onFind}
+        onFindReplace={onFindReplace}
+        onSortAsc={onSortAsc}
+        onSortDesc={onSortDesc}
       />
       
       <HistorySection
-        onUndo={props.onUndo}
-        onRedo={props.onRedo}
-        onPrint={props.onPrint}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onPrint={onPrint}
       />
     </>
   );

@@ -69,6 +69,13 @@ export interface Sheet {
   dataValidations?: DataValidation[];
   activeCell?: string;
   charts?: ChartData[];
+  // Additional properties needed by the application
+  columnWidths?: Record<string, number>;
+  rowHeights?: Record<number, number>;
+  history?: {
+    past: any[];
+    future: any[];
+  };
 }
 
 // Row definition
@@ -128,6 +135,7 @@ export interface DataValidation {
   values: string[];
   errorMessage?: string;
   promptMessage?: string;
+  allowBlank?: boolean;
 }
 
 // Formula functions
@@ -140,6 +148,7 @@ export interface FormulaFunction {
   minArgs: number;
   maxArgs: number;
   execute: (args: any[]) => any;
+  usage?: string; // Added to fix FormulaFunction interface
 }
 
 // Available formula function names

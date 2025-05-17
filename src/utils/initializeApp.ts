@@ -7,13 +7,17 @@ import voiceAssistant from './voiceAssistant';
  */
 export const initializeApp = () => {
   // Initialize voice commands
-  initializeVoiceTrainer();
-  
-  // Welcome message
-  setTimeout(() => {
-    voiceAssistant.speak("Welcome to Excel Online. Voice commands are enabled.");
-    announceVoiceCommands();
-  }, 1500);
+  try {
+    initializeVoiceTrainer();
+    
+    // Welcome message
+    setTimeout(() => {
+      voiceAssistant.speak("Welcome to Excel Online. Voice commands are enabled.");
+      announceVoiceCommands();
+    }, 1500);
+  } catch (error) {
+    console.error("Error initializing voice trainer:", error);
+  }
   
   // Initialize global keyboard shortcuts
   initializeKeyboardShortcuts();

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChartData, NumberFormat } from '../types/sheet';
 import Navigation from './Navigation';
@@ -9,7 +8,7 @@ import { useCellOperations } from '../hooks/useCellOperations';
 import { toast, Toaster } from "sonner";
 import RibbonContainer from './RibbonContainer';
 import SpreadsheetArea from './SpreadsheetArea';
-import { initVoiceAssistant, startVoiceRecognition, stopVoiceRecognition, showVoiceCommandsHelp } from '../utils/voiceAssistant';
+import voiceAssistant, { initVoiceAssistant, startVoiceRecognition, stopVoiceRecognition, showVoiceCommandsHelp } from '../utils/voiceAssistant';
 import { Mic, MicOff, HelpCircle } from 'lucide-react';
 import { Button } from "./ui/button";
 

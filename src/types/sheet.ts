@@ -1,3 +1,4 @@
+
 // Sheet and cell related types
 
 // Cell representation
@@ -8,6 +9,10 @@ export interface Cell {
   formula?: string;
   error?: string;
   mergeArea?: string;
+  calculatedValue?: any;
+  validation?: any;
+  conditionalFormat?: any;
+  comment?: Comment;
 }
 
 // Cell format specification
@@ -66,13 +71,18 @@ export interface Sheet {
   mergedCells?: string[];
   conditionalFormats?: ConditionalFormat[];
   dataValidations?: DataValidation[];
-  activeCell?: string;
+  activeCell: string;
   charts?: ChartData[];
-  columnWidths?: Record<string, number>;
-  rowHeights?: Record<number, number>;
+  columnWidths: Record<string, number>;
+  rowHeights: Record<number, number>;
   history?: {
     past: any[];
     future: any[];
+  };
+  protection?: SheetProtection;
+  freezePanes?: {
+    row: number;
+    col: number;
   };
 }
 
@@ -182,35 +192,4 @@ export interface SheetProtection {
   allowFormatCells: boolean;
   allowInsertRows: boolean;
   allowDeleteRows: boolean;
-}
-
-export interface Cell {
-  value: string;
-  format?: CellFormat;
-  formula?: string;
-  calculatedValue?: any;
-  error?: string;
-  validation?: any;
-  conditionalFormat?: any;
-  comment?: Comment;
-}
-
-export interface Sheet {
-  id: string;
-  name: string;
-  cells: Record<string, Cell>;
-  columns: Record<string, ColumnDefinition>;
-  rows: Record<string, RowDefinition>;
-  activeCell: string;
-  columnWidths: Record<string, number>;
-  rowHeights: Record<number, number>;
-  history?: {
-    past: any[];
-    future: any[];
-  };
-  protection?: SheetProtection;
-  freezePanes?: {
-    row: number;
-    col: number;
-  };
 }

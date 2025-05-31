@@ -69,7 +69,6 @@ export interface Sheet {
   dataValidations?: DataValidation[];
   activeCell?: string;
   charts?: ChartData[];
-  // Additional properties needed by the application
   columnWidths?: Record<string, number>;
   rowHeights?: Record<number, number>;
   history?: {
@@ -108,34 +107,42 @@ export interface CellRange {
 
 // Chart data
 export interface ChartData {
+  id?: string;
   type: string;
   title: string;
-  data: any[];
-  labels: string[];
-  selection: CellRange;
-  dataRange: string;
+  data?: any[];
+  labels?: string[];
+  selection?: CellRange;
+  dataRange: CellRange;
 }
 
 // Conditional formatting
 export interface ConditionalFormat {
   id: string;
   range: CellRange;
-  type: 'cellValue' | 'colorScale' | 'dataBar' | 'iconSet' | 'duplicateValues';
+  type: 'cellValue' | 'colorScale' | 'dataBar' | 'iconSet' | 'duplicateValues' | 'between' | 'containsText' | 'greaterThan' | 'lessThan' | 'equalTo' | 'top10' | 'aboveAverage' | 'belowAverage';
   operator?: 'equal' | 'notEqual' | 'greaterThan' | 'lessThan' | 'between' | 'contains';
   values: string[];
   format: Partial<CellFormat>;
+  value1?: string | number;
+  value2?: string | number;
 }
 
 // Data validation
 export interface DataValidation {
   id: string;
   range: CellRange;
-  type: 'list' | 'date' | 'number' | 'textLength' | 'custom';
+  type: 'list' | 'date' | 'number' | 'textLength' | 'custom' | 'text';
   operator?: 'equal' | 'notEqual' | 'greaterThan' | 'lessThan' | 'between';
   values: string[];
   errorMessage?: string;
   promptMessage?: string;
   allowBlank?: boolean;
+  value1?: string | number;
+  value2?: string | number;
+  list?: string[];
+  formula?: string;
+  showDropdown?: boolean;
 }
 
 // Formula functions
@@ -148,11 +155,13 @@ export interface FormulaFunction {
   minArgs: number;
   maxArgs: number;
   execute: (args: any[]) => any;
-  usage?: string; // Added to fix FormulaFunction interface
+  usage?: string;
 }
 
 // Available formula function names
 export type FormulaFunctionName = 
   'SUM' | 'AVERAGE' | 'COUNT' | 'MAX' | 'MIN' | 
   'IF' | 'CONCATENATE' | 'LEFT' | 'RIGHT' | 'MID' | 
-  'TODAY' | 'NOW' | 'VLOOKUP' | 'HLOOKUP' | 'PMT';
+  'TODAY' | 'NOW' | 'VLOOKUP' | 'HLOOKUP' | 'PMT' |
+  'ROUND' | 'COUNTIF' | 'SUMIF' | 'AVERAGEIF' | 'TRIM' |
+  'PROPER' | 'UPPER' | 'LOWER' | 'IFERROR' | 'AND' | 'OR' | 'NOT';

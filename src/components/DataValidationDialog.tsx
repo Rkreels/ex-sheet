@@ -32,7 +32,10 @@ const DataValidationDialog: React.FC<DataValidationDialogProps> = ({
 
   const handleApply = () => {
     let validation: DataValidation = {
+      id: `dv-${Date.now()}`,
+      range: selectedRange || { startCell: 'A1', endCell: 'A1' },
       type: validationType,
+      values: [],
       allowBlank,
       errorMessage,
       showDropdown
@@ -40,6 +43,7 @@ const DataValidationDialog: React.FC<DataValidationDialogProps> = ({
 
     if (validationType === 'list') {
       validation.list = listValues.split(',').map(item => item.trim());
+      validation.values = validation.list;
     } else if (validationType === 'custom') {
       validation.formula = formula;
     } else {
@@ -49,6 +53,8 @@ const DataValidationDialog: React.FC<DataValidationDialogProps> = ({
       if (['between', 'notBetween'].includes(operator)) {
         validation.value2 = value2 ? (isNaN(Number(value2)) ? value2 : Number(value2)) : undefined;
       }
+      
+      validation.values = [value1, value2].filter(Boolean);
     }
 
     onApply(validation);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -36,11 +35,7 @@ const ChartToolbar: React.FC<ChartToolbarProps> = ({ onCreateChart }) => {
       dataRange: {
         startCell: rangeParts[0],
         endCell: rangeParts[1]
-      },
-      labels: labelRange ? {
-        startCell: labelRange.split(':')[0],
-        endCell: labelRange.split(':')[1]
-      } : undefined
+      }
     };
     
     onCreateChart(newChart);

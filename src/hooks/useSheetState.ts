@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Sheet, Cell, UndoRedoState, CellSelection } from '../types/sheet';
+import { Sheet, Cell, CellSelection } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { toast } from 'sonner';
 import voiceAssistant from '../utils/voiceAssistant';
@@ -14,7 +14,9 @@ export const useSheetState = () => {
     { 
       id: 'sheet1', 
       name: 'Sheet1', 
-      cells: {}, 
+      cells: {},
+      columns: {},
+      rows: {},
       activeCell: 'A1',
       columnWidths: {},
       rowHeights: {},

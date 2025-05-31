@@ -30,7 +30,10 @@ const ConditionalFormatDialog: React.FC<ConditionalFormatDialogProps> = ({
 
   const handleApply = () => {
     const format: ConditionalFormat = {
+      id: `cf-${Date.now()}`,
+      range: selectedRange || { startCell: 'A1', endCell: 'A1' },
       type: formatType,
+      values: [value1, value2].filter(Boolean),
       value1: value1 ? (isNaN(Number(value1)) ? value1 : Number(value1)) : undefined,
       value2: value2 ? (isNaN(Number(value2)) ? value2 : Number(value2)) : undefined,
       format: {

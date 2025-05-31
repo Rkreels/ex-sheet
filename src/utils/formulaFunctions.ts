@@ -6,8 +6,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   SUM: {
     name: 'SUM',
     description: 'Adds all the numbers in a range of cells.',
+    syntax: 'SUM(number1, [number2], ...)',
+    example: 'SUM(A1:A10)',
+    category: 'math',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'SUM(number1, [number2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       return args.reduce((sum, val) => {
         const num = parseFloat(val);
         return sum + (isNaN(num) ? 0 : num);
@@ -18,8 +23,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   AVERAGE: {
     name: 'AVERAGE',
     description: 'Returns the average (arithmetic mean) of the arguments.',
+    syntax: 'AVERAGE(number1, [number2], ...)',
+    example: 'AVERAGE(A1:A10)',
+    category: 'statistical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'AVERAGE(number1, [number2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       if (args.length === 0) return 0;
       const sum = args.reduce((acc, val) => {
         const num = parseFloat(val);
@@ -32,8 +42,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   MIN: {
     name: 'MIN',
     description: 'Returns the minimum value in a list of arguments.',
+    syntax: 'MIN(number1, [number2], ...)',
+    example: 'MIN(A1:A10)',
+    category: 'statistical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'MIN(number1, [number2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       if (args.length === 0) return 0;
       return Math.min(...args.map(val => {
         const num = parseFloat(val);
@@ -45,8 +60,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   MAX: {
     name: 'MAX',
     description: 'Returns the maximum value in a list of arguments.',
+    syntax: 'MAX(number1, [number2], ...)',
+    example: 'MAX(A1:A10)',
+    category: 'statistical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'MAX(number1, [number2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       if (args.length === 0) return 0;
       return Math.max(...args.map(val => {
         const num = parseFloat(val);
@@ -58,8 +78,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   COUNT: {
     name: 'COUNT',
     description: 'Counts how many numbers are in the list of arguments.',
+    syntax: 'COUNT(value1, [value2], ...)',
+    example: 'COUNT(A1:A10)',
+    category: 'statistical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'COUNT(value1, [value2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       return args.filter(val => {
         const num = parseFloat(val);
         return !isNaN(num);
@@ -70,8 +95,14 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   IF: {
     name: 'IF',
     description: 'Returns one value if a condition is true and another value if false.',
+    syntax: 'IF(logical_test, value_if_true, [value_if_false])',
+    example: 'IF(A1>10, "High", "Low")',
+    category: 'logical',
+    minArgs: 2,
+    maxArgs: 3,
     usage: 'IF(logical_test, value_if_true, [value_if_false])',
-    execute: (test: any, valueIfTrue: any, valueIfFalse: any = "") => {
+    execute: (args: any[]) => {
+      const [test, valueIfTrue, valueIfFalse = ""] = args;
       return Boolean(test) ? valueIfTrue : valueIfFalse;
     }
   },
@@ -79,8 +110,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   CONCATENATE: {
     name: 'CONCATENATE',
     description: 'Joins several text strings into one text string.',
+    syntax: 'CONCATENATE(text1, [text2], ...)',
+    example: 'CONCATENATE("Hello", " ", "World")',
+    category: 'text',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'CONCATENATE(text1, [text2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       return args.join("");
     }
   },
@@ -88,9 +124,15 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   VLOOKUP: {
     name: 'VLOOKUP',
     description: 'Looks up a value in the first column of a range and returns a value in the same row from a column you specify.',
+    syntax: 'VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])',
+    example: 'VLOOKUP("John", A1:C10, 2, FALSE)',
+    category: 'lookup',
+    minArgs: 3,
+    maxArgs: 4,
     usage: 'VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])',
-    execute: (lookupValue: any, tableArray: any[][], colIndexNum: number, rangeLoopup: boolean = true) => {
-      // Simplified implementation
+    execute: (args: any[]) => {
+      const [lookupValue, tableArray, colIndexNum, rangeLoopup = true] = args;
+      
       if (!Array.isArray(tableArray) || tableArray.length === 0) return "#VALUE!";
       
       for (let i = 0; i < tableArray.length; i++) {
@@ -98,13 +140,11 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
         if (!row || row.length === 0) continue;
         
         if (rangeLoopup) {
-          // Approximate match
           if (row[0] === lookupValue || (row[0] >= lookupValue && i > 0)) {
             const matchRow = row[0] === lookupValue ? row : tableArray[i - 1];
             return colIndexNum <= matchRow.length ? matchRow[colIndexNum - 1] : "#REF!";
           }
         } else {
-          // Exact match
           if (row[0] === lookupValue) {
             return colIndexNum <= row.length ? row[colIndexNum - 1] : "#REF!";
           }
@@ -115,21 +155,16 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
     }
   },
   
-  ROUND: {
-    name: 'ROUND',
-    description: 'Rounds a number to a specified number of digits.',
-    usage: 'ROUND(number, num_digits)',
-    execute: (number: number, numDigits: number) => {
-      const multiplier = Math.pow(10, numDigits);
-      return Math.round(number * multiplier) / multiplier;
-    }
-  },
-  
   TODAY: {
     name: 'TODAY',
     description: 'Returns the current date.',
+    syntax: 'TODAY()',
+    example: 'TODAY()',
+    category: 'date',
+    minArgs: 0,
+    maxArgs: 0,
     usage: 'TODAY()',
-    execute: () => {
+    execute: (args: any[]) => {
       const today = new Date();
       return today.toLocaleDateString();
     }
@@ -138,192 +173,61 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   NOW: {
     name: 'NOW',
     description: 'Returns the current date and time.',
+    syntax: 'NOW()',
+    example: 'NOW()',
+    category: 'date',
+    minArgs: 0,
+    maxArgs: 0,
     usage: 'NOW()',
-    execute: () => {
+    execute: (args: any[]) => {
       const now = new Date();
       return now.toLocaleString();
-    }
-  },
-  
-  // Enhanced functions
-  COUNTIF: {
-    name: 'COUNTIF',
-    description: 'Counts the number of cells within a range that meet the given criteria.',
-    usage: 'COUNTIF(range, criteria)',
-    execute: (range: any[], criteria: any) => {
-      if (!Array.isArray(range)) return 0;
-      
-      return range.filter(val => {
-        if (typeof criteria === 'string' && criteria.startsWith('>')) {
-          return val > parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('<')) {
-          return val < parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
-          return val == criteria.substring(1);
-        } else if (typeof criteria === 'string' && criteria.includes('*')) {
-          const pattern = criteria.replace(/\*/g, '.*');
-          const regex = new RegExp(`^${pattern}$`, 'i');
-          return regex.test(String(val));
-        } else {
-          return val == criteria;
-        }
-      }).length;
-    }
-  },
-  
-  SUMIF: {
-    name: 'SUMIF',
-    description: 'Adds the cells specified by a given criteria.',
-    usage: 'SUMIF(range, criteria, [sum_range])',
-    execute: (range: any[], criteria: any, sumRange?: any[]) => {
-      if (!Array.isArray(range)) return 0;
-      
-      const rangesToSum = sumRange || range;
-      let sum = 0;
-      
-      range.forEach((val, index) => {
-        let matches = false;
-        
-        if (typeof criteria === 'string' && criteria.startsWith('>')) {
-          matches = val > parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('<')) {
-          matches = val < parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
-          matches = val == criteria.substring(1);
-        } else if (typeof criteria === 'string' && criteria.includes('*')) {
-          const pattern = criteria.replace(/\*/g, '.*');
-          const regex = new RegExp(`^${pattern}$`, 'i');
-          matches = regex.test(String(val));
-        } else {
-          matches = val == criteria;
-        }
-        
-        if (matches && rangesToSum[index] !== undefined) {
-          const num = parseFloat(rangesToSum[index]);
-          if (!isNaN(num)) {
-            sum += num;
-          }
-        }
-      });
-      
-      return sum;
-    }
-  },
-
-  AVERAGEIF: {
-    name: 'AVERAGEIF',
-    description: 'Returns the average of values that meet a criteria.',
-    usage: 'AVERAGEIF(range, criteria, [average_range])',
-    execute: (range: any[], criteria: any, averageRange?: any[]) => {
-      if (!Array.isArray(range)) return 0;
-      
-      const rangesToAvg = averageRange || range;
-      let sum = 0;
-      let count = 0;
-      
-      range.forEach((val, index) => {
-        let matches = false;
-        
-        if (typeof criteria === 'string' && criteria.startsWith('>')) {
-          matches = val > parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('<')) {
-          matches = val < parseFloat(criteria.substring(1));
-        } else if (typeof criteria === 'string' && criteria.startsWith('=')) {
-          matches = val == criteria.substring(1);
-        } else {
-          matches = val == criteria;
-        }
-        
-        if (matches && rangesToAvg[index] !== undefined) {
-          const num = parseFloat(rangesToAvg[index]);
-          if (!isNaN(num)) {
-            sum += num;
-            count++;
-          }
-        }
-      });
-      
-      return count > 0 ? sum / count : 0;
-    }
-  },
-  
-  TRIM: {
-    name: 'TRIM',
-    description: 'Removes extra spaces from text.',
-    usage: 'TRIM(text)',
-    execute: (text: string) => {
-      if (typeof text !== 'string') return text;
-      return text.trim().replace(/\s+/g, ' ');
-    }
-  },
-  
-  PROPER: {
-    name: 'PROPER',
-    description: 'Capitalizes the first letter in each word of a text value.',
-    usage: 'PROPER(text)',
-    execute: (text: string) => {
-      if (typeof text !== 'string') return text;
-      return text.toLowerCase().replace(/(?:^|\s)\S/g, (char) => char.toUpperCase());
-    }
-  },
-  
-  UPPER: {
-    name: 'UPPER',
-    description: 'Converts text to uppercase.',
-    usage: 'UPPER(text)',
-    execute: (text: string) => {
-      if (typeof text !== 'string') return text;
-      return text.toUpperCase();
-    }
-  },
-  
-  LOWER: {
-    name: 'LOWER',
-    description: 'Converts text to lowercase.',
-    usage: 'LOWER(text)',
-    execute: (text: string) => {
-      if (typeof text !== 'string') return text;
-      return text.toLowerCase();
-    }
-  },
-  
-  IFERROR: {
-    name: 'IFERROR',
-    description: 'Returns a value if an expression is an error and another value if not.',
-    usage: 'IFERROR(value, value_if_error)',
-    execute: (value: any, valueIfError: any) => {
-      if (typeof value === 'string' && value.startsWith('#')) {
-        return valueIfError;
-      }
-      return value;
     }
   },
   
   LEFT: {
     name: 'LEFT',
     description: 'Returns the specified number of characters from the start of a text string.',
+    syntax: 'LEFT(text, num_chars)',
+    example: 'LEFT("Hello", 3)',
+    category: 'text',
+    minArgs: 1,
+    maxArgs: 2,
     usage: 'LEFT(text, num_chars)',
-    execute: (text: string, numChars: number) => {
+    execute: (args: any[]) => {
+      const [text, numChars = 1] = args;
       if (typeof text !== 'string') return '';
-      return text.substring(0, numChars || 1);
+      return text.substring(0, numChars);
     }
   },
   
   RIGHT: {
     name: 'RIGHT',
     description: 'Returns the specified number of characters from the end of a text string.',
+    syntax: 'RIGHT(text, num_chars)',
+    example: 'RIGHT("Hello", 3)',
+    category: 'text',
+    minArgs: 1,
+    maxArgs: 2,
     usage: 'RIGHT(text, num_chars)',
-    execute: (text: string, numChars: number) => {
+    execute: (args: any[]) => {
+      const [text, numChars = 1] = args;
       if (typeof text !== 'string') return '';
-      return text.substring(text.length - (numChars || 1));
+      return text.substring(text.length - numChars);
     }
   },
   
   MID: {
     name: 'MID',
     description: 'Returns the characters from the middle of a text string, given a starting position and length.',
+    syntax: 'MID(text, start_num, num_chars)',
+    example: 'MID("Hello", 2, 3)',
+    category: 'text',
+    minArgs: 3,
+    maxArgs: 3,
     usage: 'MID(text, start_num, num_chars)',
-    execute: (text: string, startNum: number, numChars: number) => {
+    execute: (args: any[]) => {
+      const [text, startNum, numChars] = args;
       if (typeof text !== 'string') return '';
       return text.substring(startNum - 1, startNum - 1 + numChars);
     }
@@ -332,8 +236,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   AND: {
     name: 'AND',
     description: 'Returns TRUE if all arguments are TRUE.',
+    syntax: 'AND(logical1, [logical2], ...)',
+    example: 'AND(A1>5, B1<10)',
+    category: 'logical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'AND(logical1, [logical2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       return args.every(Boolean);
     }
   },
@@ -341,8 +250,13 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   OR: {
     name: 'OR',
     description: 'Returns TRUE if any argument is TRUE.',
+    syntax: 'OR(logical1, [logical2], ...)',
+    example: 'OR(A1>5, B1<10)',
+    category: 'logical',
+    minArgs: 1,
+    maxArgs: 255,
     usage: 'OR(logical1, [logical2], ...)',
-    execute: (...args: any[]) => {
+    execute: (args: any[]) => {
       return args.some(Boolean);
     }
   },
@@ -350,9 +264,14 @@ export const formulaFunctions: Record<string, FormulaFunction> = {
   NOT: {
     name: 'NOT',
     description: 'Reverses the logical value of its argument.',
+    syntax: 'NOT(logical)',
+    example: 'NOT(A1>5)',
+    category: 'logical',
+    minArgs: 1,
+    maxArgs: 1,
     usage: 'NOT(logical)',
-    execute: (logical: any) => {
-      return !Boolean(logical);
+    execute: (args: any[]) => {
+      return !Boolean(args[0]);
     }
   }
 };

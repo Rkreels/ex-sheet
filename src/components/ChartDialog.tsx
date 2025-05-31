@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ const ChartDialog: React.FC<ChartDialogProps> = ({ isOpen, onClose, chartData, c
 
     const { dataRange } = chartData;
     
-    // Get data from the specified range
+    // Get data from the specified range using CellRange object
     const rawData = getCellRangeData(dataRange.startCell, dataRange.endCell, cells);
     
     // Process data based on chart type

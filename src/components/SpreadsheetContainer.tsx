@@ -1,8 +1,10 @@
 
 import React from 'react';
 import Spreadsheet from './Spreadsheet';
+import SpreadsheetEnhancer from './SpreadsheetEnhancer';
 import { Sheet, CellSelection } from '../types/sheet';
 import { useHotkeys } from '../hooks/useHotkeys';
+import { formulaFunctions } from '../utils/formulaFunctions';
 
 interface SpreadsheetContainerProps {
   sheet: Sheet;
@@ -16,6 +18,8 @@ interface SpreadsheetContainerProps {
   onPaste?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onDelete?: () => void;
+  onFind?: () => void;
 }
 
 const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
@@ -25,11 +29,13 @@ const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
   onCellSelectionChange,
   onColumnWidthChange,
   onRowHeightChange,
-  onCopy,
-  onCut,
-  onPaste,
-  onUndo,
-  onRedo
+  onCopy = () => {},
+  onCut = () => {},
+  onPaste = () => {},
+  onUndo = () => {},
+  onRedo = () => {},
+  onDelete = () => {},
+  onFind = () => {}
 }) => {
   // Initialize hotkeys for keyboard navigation with all callbacks
   useHotkeys(
@@ -44,17 +50,32 @@ const SpreadsheetContainer: React.FC<SpreadsheetContainerProps> = ({
 
   return (
     <div className="w-full h-full overflow-auto bg-white">
-      <Spreadsheet 
-        cells={sheet?.cells || {}} 
+      <SpreadsheetEnhancer
+        cells={sheet?.cells || {}}
         activeCell={sheet?.activeCell || 'A1'}
         onCellChange={onCellChange}
         onCellSelect={onCellSelect}
-        onCellSelectionChange={onCellSelectionChange}
-        columnWidths={sheet?.columnWidths || {}}
-        rowHeights={sheet?.rowHeights || {}}
-        onColumnWidthChange={onColumnWidthChange}
-        onRowHeightChange={onRowHeightChange}
-      />
+        onCopy={onCopy}
+        onCut={onCut}
+        onPaste={onPaste}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onDelete={onDelete}
+        onFind={onFind}
+        formulaFunctions={Object.values(formulaFunctions)}
+      >
+        <Spreadsheet 
+          cells={sheet?.cells || {}} 
+          activeCell={sheet?.activeCell || 'A1'}
+          onCellChange={onCellChange}
+          onCellSelect={onCellSelect}
+          onCellSelectionChange={onCellSelectionChange}
+          columnWidths={sheet?.columnWidths || {}}
+          rowHeights={sheet?.rowHeights || {}}
+          onColumnWidthChange={onColumnWidthChange}
+          onRowHeightChange={onRowHeightChange}
+        />
+      </SpreadsheetEnhancer>
     </div>
   );
 };

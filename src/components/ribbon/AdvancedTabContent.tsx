@@ -6,7 +6,9 @@ import RibbonSection from './RibbonSection';
 import DashboardManager from '../dashboard/DashboardManager';
 import FinancialModeling from '../analysis/FinancialModeling';
 import DataTransformation from '../analysis/DataTransformation';
-import { BarChart3, Calculator, Database, TrendingUp } from 'lucide-react';
+import WhatIfAnalysis from '../analysis/WhatIfAnalysis';
+import ProjectManagement from '../analysis/ProjectManagement';
+import { BarChart3, Calculator, Database, TrendingUp, Target, Calendar, Globe, FileSpreadsheet } from 'lucide-react';
 
 interface AdvancedTabContentProps {
   sheets: any[];
@@ -89,9 +91,63 @@ const AdvancedTabContent: React.FC<AdvancedTabContentProps> = ({
       </RibbonSection>
 
       <RibbonSection title="What-If Analysis" voiceCommand="scenario analysis">
-        <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
+        <Dialog open={activeDialog === 'whatif'} onOpenChange={(open) => setActiveDialog(open ? 'whatif' : null)}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
+              <Target className="w-6 h-6 mb-1" />
+              <span className="text-xs">Scenarios</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>What-If Analysis & Scenario Modeling</DialogTitle>
+            </DialogHeader>
+            <WhatIfAnalysis
+              activeSheet={activeSheet}
+              onUpdateSheet={onUpdateSheet}
+            />
+          </DialogContent>
+        </Dialog>
+      </RibbonSection>
+
+      <RibbonSection title="Project Management" voiceCommand="project tools">
+        <Dialog open={activeDialog === 'project'} onOpenChange={(open) => setActiveDialog(open ? 'project' : null)}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
+              <Calendar className="w-6 h-6 mb-1" />
+              <span className="text-xs">Gantt Chart</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>Project Management Tools</DialogTitle>
+            </DialogHeader>
+            <ProjectManagement
+              activeSheet={activeSheet}
+              onUpdateSheet={onUpdateSheet}
+            />
+          </DialogContent>
+        </Dialog>
+      </RibbonSection>
+
+      <RibbonSection title="Advanced Analytics" voiceCommand="advanced analytics">
+        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
           <TrendingUp className="w-6 h-6 mb-1" />
-          <span className="text-xs">Scenarios</span>
+          <span className="text-xs">Analytics</span>
+        </Button>
+      </RibbonSection>
+
+      <RibbonSection title="External Data" voiceCommand="external data">
+        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
+          <Globe className="w-6 h-6 mb-1" />
+          <span className="text-xs">Web Data</span>
+        </Button>
+      </RibbonSection>
+
+      <RibbonSection title="Automation" voiceCommand="automation tools">
+        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
+          <FileSpreadsheet className="w-6 h-6 mb-1" />
+          <span className="text-xs">Macros</span>
         </Button>
       </RibbonSection>
     </div>

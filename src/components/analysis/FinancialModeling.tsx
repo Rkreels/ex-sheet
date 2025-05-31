@@ -3,263 +3,372 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Sheet } from '../../types/sheet';
+import { toast } from 'sonner';
 
 interface FinancialModelingProps {
   activeSheet: Sheet;
   onUpdateSheet: (sheetId: string, updates: Partial<Sheet>) => void;
 }
 
-const FinancialModeling: React.FC<FinancialModelingProps> = ({ activeSheet, onUpdateSheet }) => {
+const FinancialModeling: React.FC<FinancialModelingProps> = ({
+  activeSheet,
+  onUpdateSheet
+}) => {
+  const [modelType, setModelType] = useState<'dcf' | 'npv' | 'three-statement'>('dcf');
   const [assumptions, setAssumptions] = useState({
-    revenueGrowth: 0.15,
-    costOfGoodsSold: 0.65,
-    operatingExpenses: 0.20,
-    taxRate: 0.25,
+    revenue: 1000000,
+    growthRate: 0.05,
     discountRate: 0.10,
-    terminalGrowthRate: 0.03
+    terminalGrowthRate: 0.02,
+    capex: 50000,
+    workingCapital: 100000,
+    taxRate: 0.25,
+    years: 5
   });
 
-  const generateIncomeStatement = () => {
-    const years = 5;
-    const incomeStatementData: Record<string, any> = {};
-    
-    // Base year revenue (example)
-    let baseRevenue = 1000000;
-    
-    for (let year = 1; year <= years; year++) {
-      const revenue = baseRevenue * Math.pow(1 + assumptions.revenueGrowth, year);
-      const cogs = revenue * assumptions.costOfGoodsSold;
-      const grossProfit = revenue - cogs;
-      const opex = revenue * assumptions.operatingExpenses;
-      const ebit = grossProfit - opex;
-      const tax = ebit * assumptions.taxRate;
-      const netIncome = ebit - tax;
-      
-      incomeStatementData[`A${year + 10}`] = { value: `Year ${year}` };
-      incomeStatementData[`B${year + 10}`] = { value: revenue.toFixed(0) };
-      incomeStatementData[`C${year + 10}`] = { value: cogs.toFixed(0) };
-      incomeStatementData[`D${year + 10}`] = { value: grossProfit.toFixed(0) };
-      incomeStatementData[`E${year + 10}`] = { value: opex.toFixed(0) };
-      incomeStatementData[`F${year + 10}`] = { value: ebit.toFixed(0) };
-      incomeStatementData[`G${year + 10}`] = { value: tax.toFixed(0) };
-      incomeStatementData[`H${year + 10}`] = { value: netIncome.toFixed(0) };
-    }
+  const generateDCFModel = () => {
+    const newCells = { ...activeSheet.cells };
     
     // Headers
-    incomeStatementData['A10'] = { value: 'Period' };
-    incomeStatementData['B10'] = { value: 'Revenue' };
-    incomeStatementData['C10'] = { value: 'COGS' };
-    incomeStatementData['D10'] = { value: 'Gross Profit' };
-    incomeStatementData['E10'] = { value: 'OpEx' };
-    incomeStatementData['F10'] = { value: 'EBIT' };
-    incomeStatementData['G10'] = { value: 'Tax' };
-    incomeStatementData['H10'] = { value: 'Net Income' };
-    
-    onUpdateSheet(activeSheet.id, {
-      cells: { ...activeSheet.cells, ...incomeStatementData }
-    });
-  };
+    newCells['A1'] = { value: 'DCF Valuation Model' };
+    newCells['A3'] = { value: 'Year' };
+    newCells['B3'] = { value: 'Revenue' };
+    newCells['C3'] = { value: 'EBITDA' };
+    newCells['D3'] = { value: 'EBIT' };
+    newCells['E3'] = { value: 'Tax' };
+    newCells['F3'] = { value: 'NOPAT' };
+    newCells['G3'] = { value: 'FCF' };
+    newCells['H3'] = { value: 'PV Factor' };
+    newCells['I3'] = { value: 'PV of FCF' };
 
-  const generateBalanceSheet = () => {
-    const balanceSheetData: Record<string, any> = {};
-    
-    // Sample balance sheet structure
-    const balanceSheetItems = [
-      'Assets', 'Current Assets', 'Cash', 'Accounts Receivable', 'Inventory',
-      'Fixed Assets', 'PP&E', 'Total Assets', '',
-      'Liabilities', 'Current Liabilities', 'Accounts Payable', 'Short-term Debt',
-      'Long-term Debt', 'Total Liabilities', '',
-      'Equity', 'Share Capital', 'Retained Earnings', 'Total Equity'
-    ];
-    
-    balanceSheetItems.forEach((item, index) => {
-      balanceSheetData[`A${20 + index}`] = { value: item };
-      if (item && !['Assets', 'Liabilities', 'Equity', ''].includes(item)) {
-        balanceSheetData[`B${20 + index}`] = { value: '0' };
-      }
-    });
-    
-    onUpdateSheet(activeSheet.id, {
-      cells: { ...activeSheet.cells, ...balanceSheetData }
-    });
-  };
+    // Generate projections
+    for (let year = 1; year <= assumptions.years; year++) {
+      const row = 3 + year;
+      const revenue = assumptions.revenue * Math.pow(1 + assumptions.growthRate, year);
+      const ebitda = revenue * 0.3; // 30% EBITDA margin
+      const depreciation = assumptions.capex * 0.1; // 10% depreciation
+      const ebit = ebitda - depreciation;
+      const tax = ebit * assumptions.taxRate;
+      const nopat = ebit - tax;
+      const fcf = nopat + depreciation - assumptions.capex - (assumptions.workingCapital * assumptions.growthRate);
+      const pvFactor = 1 / Math.pow(1 + assumptions.discountRate, year);
+      const pvFcf = fcf * pvFactor;
 
-  const generateCashFlowStatement = () => {
-    const cashFlowData: Record<string, any> = {};
-    
-    const cashFlowItems = [
-      'Operating Cash Flow', 'Net Income', 'Depreciation', 'Working Capital Changes',
-      'Net Operating Cash Flow', '',
-      'Investing Cash Flow', 'CapEx', 'Net Investing Cash Flow', '',
-      'Financing Cash Flow', 'Debt Issuance', 'Debt Repayment', 'Dividends',
-      'Net Financing Cash Flow', '',
-      'Net Change in Cash', 'Beginning Cash', 'Ending Cash'
-    ];
-    
-    cashFlowItems.forEach((item, index) => {
-      cashFlowData[`A${50 + index}`] = { value: item };
-      if (item && !['', 'Operating Cash Flow', 'Investing Cash Flow', 'Financing Cash Flow'].includes(item)) {
-        cashFlowData[`B${50 + index}`] = { value: '0' };
-      }
-    });
-    
-    onUpdateSheet(activeSheet.id, {
-      cells: { ...activeSheet.cells, ...cashFlowData }
-    });
-  };
-
-  const calculateDCF = () => {
-    // Simple DCF calculation
-    const years = 5;
-    const terminalValue = 1000000 * Math.pow(1 + assumptions.revenueGrowth, years) * (1 + assumptions.terminalGrowthRate) / (assumptions.discountRate - assumptions.terminalGrowthRate);
-    
-    let presentValue = 0;
-    for (let year = 1; year <= years; year++) {
-      const cashFlow = 100000 * Math.pow(1 + assumptions.revenueGrowth, year); // Simplified
-      presentValue += cashFlow / Math.pow(1 + assumptions.discountRate, year);
+      newCells[`A${row}`] = { value: year.toString() };
+      newCells[`B${row}`] = { value: revenue.toFixed(0) };
+      newCells[`C${row}`] = { value: ebitda.toFixed(0) };
+      newCells[`D${row}`] = { value: ebit.toFixed(0) };
+      newCells[`E${row}`] = { value: tax.toFixed(0) };
+      newCells[`F${row}`] = { value: nopat.toFixed(0) };
+      newCells[`G${row}`] = { value: fcf.toFixed(0) };
+      newCells[`H${row}`] = { value: pvFactor.toFixed(4) };
+      newCells[`I${row}`] = { value: pvFcf.toFixed(0) };
     }
+
+    // Terminal value calculation
+    const terminalRow = 3 + assumptions.years + 2;
+    const terminalFCF = parseFloat(newCells[`G${3 + assumptions.years}`]?.value || '0') * (1 + assumptions.terminalGrowthRate);
+    const terminalValue = terminalFCF / (assumptions.discountRate - assumptions.terminalGrowthRate);
+    const pvTerminalValue = terminalValue / Math.pow(1 + assumptions.discountRate, assumptions.years);
+
+    newCells[`A${terminalRow}`] = { value: 'Terminal Value' };
+    newCells[`G${terminalRow}`] = { value: terminalValue.toFixed(0) };
+    newCells[`I${terminalRow}`] = { value: pvTerminalValue.toFixed(0) };
+
+    // Sum up enterprise value
+    const enterpriseValueRow = terminalRow + 1;
+    let totalPV = pvTerminalValue;
+    for (let year = 1; year <= assumptions.years; year++) {
+      totalPV += parseFloat(newCells[`I${3 + year}`]?.value || '0');
+    }
+
+    newCells[`A${enterpriseValueRow}`] = { value: 'Enterprise Value' };
+    newCells[`I${enterpriseValueRow}`] = { value: totalPV.toFixed(0) };
+
+    onUpdateSheet(activeSheet.id, { cells: newCells });
+    toast.success("DCF model generated successfully!");
+  };
+
+  const generateThreeStatementModel = () => {
+    const newCells = { ...activeSheet.cells };
     
-    const terminalPV = terminalValue / Math.pow(1 + assumptions.discountRate, years);
-    const totalValue = presentValue + terminalPV;
+    // Income Statement
+    newCells['A1'] = { value: 'Three-Statement Financial Model' };
+    newCells['A3'] = { value: 'INCOME STATEMENT' };
+    newCells['A4'] = { value: 'Revenue' };
+    newCells['A5'] = { value: 'COGS' };
+    newCells['A6'] = { value: 'Gross Profit' };
+    newCells['A7'] = { value: 'Operating Expenses' };
+    newCells['A8'] = { value: 'EBITDA' };
+    newCells['A9'] = { value: 'Depreciation' };
+    newCells['A10'] = { value: 'EBIT' };
+    newCells['A11'] = { value: 'Interest Expense' };
+    newCells['A12'] = { value: 'EBT' };
+    newCells['A13'] = { value: 'Tax' };
+    newCells['A14'] = { value: 'Net Income' };
+
+    // Balance Sheet
+    newCells['A16'] = { value: 'BALANCE SHEET' };
+    newCells['A17'] = { value: 'Cash' };
+    newCells['A18'] = { value: 'Accounts Receivable' };
+    newCells['A19'] = { value: 'Inventory' };
+    newCells['A20'] = { value: 'Total Current Assets' };
+    newCells['A21'] = { value: 'PP&E' };
+    newCells['A22'] = { value: 'Total Assets' };
+    newCells['A24'] = { value: 'Accounts Payable' };
+    newCells['A25'] = { value: 'Short-term Debt' };
+    newCells['A26'] = { value: 'Total Current Liabilities' };
+    newCells['A27'] = { value: 'Long-term Debt' };
+    newCells['A28'] = { value: 'Total Liabilities' };
+    newCells['A29'] = { value: 'Shareholders Equity' };
+
+    // Cash Flow Statement
+    newCells['A31'] = { value: 'CASH FLOW STATEMENT' };
+    newCells['A32'] = { value: 'Net Income' };
+    newCells['A33'] = { value: 'Depreciation' };
+    newCells['A34'] = { value: 'Change in Working Capital' };
+    newCells['A35'] = { value: 'Operating Cash Flow' };
+    newCells['A36'] = { value: 'Capital Expenditures' };
+    newCells['A37'] = { value: 'Investing Cash Flow' };
+    newCells['A38'] = { value: 'Debt Issuance' };
+    newCells['A39'] = { value: 'Financing Cash Flow' };
+    newCells['A40'] = { value: 'Net Change in Cash' };
+
+    // Generate 3 years of projections
+    for (let year = 0; year < 3; year++) {
+      const col = String.fromCharCode(66 + year); // B, C, D
+      const revenue = assumptions.revenue * Math.pow(1 + assumptions.growthRate, year);
+      const cogs = revenue * 0.6;
+      const grossProfit = revenue - cogs;
+      const opex = revenue * 0.2;
+      const ebitda = grossProfit - opex;
+      const depreciation = 50000;
+      const ebit = ebitda - depreciation;
+      const interest = 20000;
+      const ebt = ebit - interest;
+      const tax = ebt * assumptions.taxRate;
+      const netIncome = ebt - tax;
+
+      // Income Statement
+      newCells[`${col}4`] = { value: revenue.toFixed(0) };
+      newCells[`${col}5`] = { value: cogs.toFixed(0) };
+      newCells[`${col}6`] = { value: grossProfit.toFixed(0) };
+      newCells[`${col}7`] = { value: opex.toFixed(0) };
+      newCells[`${col}8`] = { value: ebitda.toFixed(0) };
+      newCells[`${col}9`] = { value: depreciation.toFixed(0) };
+      newCells[`${col}10`] = { value: ebit.toFixed(0) };
+      newCells[`${col}11`] = { value: interest.toFixed(0) };
+      newCells[`${col}12`] = { value: ebt.toFixed(0) };
+      newCells[`${col}13`] = { value: tax.toFixed(0) };
+      newCells[`${col}14`] = { value: netIncome.toFixed(0) };
+
+      // Balance Sheet (simplified)
+      const cash = 100000 + netIncome;
+      const ar = revenue * 0.1;
+      const inventory = revenue * 0.15;
+      const currentAssets = cash + ar + inventory;
+      const ppe = 500000 + (year * 50000);
+      const totalAssets = currentAssets + ppe;
+
+      newCells[`${col}17`] = { value: cash.toFixed(0) };
+      newCells[`${col}18`] = { value: ar.toFixed(0) };
+      newCells[`${col}19`] = { value: inventory.toFixed(0) };
+      newCells[`${col}20`] = { value: currentAssets.toFixed(0) };
+      newCells[`${col}21`] = { value: ppe.toFixed(0) };
+      newCells[`${col}22`] = { value: totalAssets.toFixed(0) };
+
+      const ap = revenue * 0.08;
+      const shortDebt = 50000;
+      const currentLiab = ap + shortDebt;
+      const longDebt = 300000;
+      const totalLiab = currentLiab + longDebt;
+      const equity = totalAssets - totalLiab;
+
+      newCells[`${col}24`] = { value: ap.toFixed(0) };
+      newCells[`${col}25`] = { value: shortDebt.toFixed(0) };
+      newCells[`${col}26`] = { value: currentLiab.toFixed(0) };
+      newCells[`${col}27`] = { value: longDebt.toFixed(0) };
+      newCells[`${col}28`] = { value: totalLiab.toFixed(0) };
+      newCells[`${col}29`] = { value: equity.toFixed(0) };
+
+      // Cash Flow Statement
+      const workingCapitalChange = -10000;
+      const ocf = netIncome + depreciation + workingCapitalChange;
+      const capex = -50000;
+      const icf = capex;
+      const debtIssuance = 0;
+      const fcf = debtIssuance;
+      const netCashChange = ocf + icf + fcf;
+
+      newCells[`${col}32`] = { value: netIncome.toFixed(0) };
+      newCells[`${col}33`] = { value: depreciation.toFixed(0) };
+      newCells[`${col}34`] = { value: workingCapitalChange.toFixed(0) };
+      newCells[`${col}35`] = { value: ocf.toFixed(0) };
+      newCells[`${col}36`] = { value: capex.toFixed(0) };
+      newCells[`${col}37`] = { value: icf.toFixed(0) };
+      newCells[`${col}38`] = { value: debtIssuance.toFixed(0) };
+      newCells[`${col}39`] = { value: fcf.toFixed(0) };
+      newCells[`${col}40`] = { value: netCashChange.toFixed(0) };
+    }
+
+    onUpdateSheet(activeSheet.id, { cells: newCells });
+    toast.success("Three-statement model generated successfully!");
+  };
+
+  const generateNPVAnalysis = () => {
+    const newCells = { ...activeSheet.cells };
     
-    const dcfData: Record<string, any> = {
-      'K10': { value: 'DCF Valuation' },
-      'K11': { value: 'Present Value of Cash Flows' },
-      'L11': { value: presentValue.toFixed(0) },
-      'K12': { value: 'Terminal Value (PV)' },
-      'L12': { value: terminalPV.toFixed(0) },
-      'K13': { value: 'Total Enterprise Value' },
-      'L13': { value: totalValue.toFixed(0) }
-    };
+    newCells['A1'] = { value: 'NPV Analysis' };
+    newCells['A3'] = { value: 'Year' };
+    newCells['B3'] = { value: 'Cash Flow' };
+    newCells['C3'] = { value: 'Discount Factor' };
+    newCells['D3'] = { value: 'Present Value' };
+
+    let npv = -assumptions.revenue; // Initial investment
     
-    onUpdateSheet(activeSheet.id, {
-      cells: { ...activeSheet.cells, ...dcfData }
-    });
+    for (let year = 1; year <= assumptions.years; year++) {
+      const row = 3 + year;
+      const cashFlow = assumptions.revenue * assumptions.growthRate * year;
+      const discountFactor = 1 / Math.pow(1 + assumptions.discountRate, year);
+      const presentValue = cashFlow * discountFactor;
+      npv += presentValue;
+
+      newCells[`A${row}`] = { value: year.toString() };
+      newCells[`B${row}`] = { value: cashFlow.toFixed(0) };
+      newCells[`C${row}`] = { value: discountFactor.toFixed(4) };
+      newCells[`D${row}`] = { value: presentValue.toFixed(0) };
+    }
+
+    const npvRow = 3 + assumptions.years + 2;
+    newCells[`A${npvRow}`] = { value: 'Net Present Value' };
+    newCells[`D${npvRow}`] = { value: npv.toFixed(0) };
+
+    // IRR calculation (simplified)
+    const irr = assumptions.discountRate + 0.05; // Placeholder
+    newCells[`A${npvRow + 1}`] = { value: 'Internal Rate of Return' };
+    newCells[`D${npvRow + 1}`] = { value: (irr * 100).toFixed(2) + '%' };
+
+    onUpdateSheet(activeSheet.id, { cells: newCells });
+    toast.success("NPV analysis generated successfully!");
+  };
+
+  const generateModel = () => {
+    switch (modelType) {
+      case 'dcf':
+        generateDCFModel();
+        break;
+      case 'three-statement':
+        generateThreeStatementModel();
+        break;
+      case 'npv':
+        generateNPVAnalysis();
+        break;
+    }
   };
 
   return (
-    <div className="p-4">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Financial Modeling Suite</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="assumptions">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="model" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="model">Model Selection</TabsTrigger>
               <TabsTrigger value="assumptions">Assumptions</TabsTrigger>
-              <TabsTrigger value="statements">3-Statement Model</TabsTrigger>
-              <TabsTrigger value="valuation">Valuation</TabsTrigger>
-              <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="model" className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Model Type</label>
+                <Select value={modelType} onValueChange={(value: any) => setModelType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dcf">DCF Valuation Model</SelectItem>
+                    <SelectItem value="three-statement">Three-Statement Model</SelectItem>
+                    <SelectItem value="npv">NPV Analysis</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button onClick={generateModel} className="w-full">
+                Generate {modelType.toUpperCase()} Model
+              </Button>
+            </TabsContent>
             
             <TabsContent value="assumptions" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="revenueGrowth">Revenue Growth Rate</Label>
+                  <label className="text-sm font-medium">Initial Revenue</label>
                   <Input
-                    id="revenueGrowth"
                     type="number"
-                    step="0.01"
-                    value={assumptions.revenueGrowth}
-                    onChange={(e) => setAssumptions({...assumptions, revenueGrowth: parseFloat(e.target.value)})}
+                    value={assumptions.revenue}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, revenue: parseFloat(e.target.value) || 0 }))}
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="cogs">Cost of Goods Sold %</Label>
+                  <label className="text-sm font-medium">Growth Rate (%)</label>
                   <Input
-                    id="cogs"
                     type="number"
                     step="0.01"
-                    value={assumptions.costOfGoodsSold}
-                    onChange={(e) => setAssumptions({...assumptions, costOfGoodsSold: parseFloat(e.target.value)})}
+                    value={assumptions.growthRate * 100}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, growthRate: (parseFloat(e.target.value) || 0) / 100 }))}
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="opex">Operating Expenses %</Label>
+                  <label className="text-sm font-medium">Discount Rate (%)</label>
                   <Input
-                    id="opex"
                     type="number"
                     step="0.01"
-                    value={assumptions.operatingExpenses}
-                    onChange={(e) => setAssumptions({...assumptions, operatingExpenses: parseFloat(e.target.value)})}
+                    value={assumptions.discountRate * 100}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, discountRate: (parseFloat(e.target.value) || 0) / 100 }))}
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="taxRate">Tax Rate</Label>
+                  <label className="text-sm font-medium">Terminal Growth Rate (%)</label>
                   <Input
-                    id="taxRate"
                     type="number"
                     step="0.01"
-                    value={assumptions.taxRate}
-                    onChange={(e) => setAssumptions({...assumptions, taxRate: parseFloat(e.target.value)})}
+                    value={assumptions.terminalGrowthRate * 100}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, terminalGrowthRate: (parseFloat(e.target.value) || 0) / 100 }))}
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="discountRate">Discount Rate</Label>
+                  <label className="text-sm font-medium">Annual CapEx</label>
                   <Input
-                    id="discountRate"
                     type="number"
-                    step="0.01"
-                    value={assumptions.discountRate}
-                    onChange={(e) => setAssumptions({...assumptions, discountRate: parseFloat(e.target.value)})}
+                    value={assumptions.capex}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, capex: parseFloat(e.target.value) || 0 }))}
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="terminalGrowth">Terminal Growth Rate</Label>
+                  <label className="text-sm font-medium">Tax Rate (%)</label>
                   <Input
-                    id="terminalGrowth"
                     type="number"
                     step="0.01"
-                    value={assumptions.terminalGrowthRate}
-                    onChange={(e) => setAssumptions({...assumptions, terminalGrowthRate: parseFloat(e.target.value)})}
+                    value={assumptions.taxRate * 100}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, taxRate: (parseFloat(e.target.value) || 0) / 100 }))}
                   />
                 </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="statements" className="space-y-4">
-              <div className="flex gap-4">
-                <Button onClick={generateIncomeStatement}>Generate Income Statement</Button>
-                <Button onClick={generateBalanceSheet}>Generate Balance Sheet</Button>
-                <Button onClick={generateCashFlowStatement}>Generate Cash Flow</Button>
-              </div>
-              <p className="text-sm text-gray-600">
-                Click the buttons above to generate the three financial statements in your spreadsheet.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="valuation" className="space-y-4">
-              <Button onClick={calculateDCF}>Calculate DCF Valuation</Button>
-              <p className="text-sm text-gray-600">
-                This will generate a discounted cash flow analysis based on your assumptions.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="scenarios" className="space-y-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">Scenario Analysis</h4>
-                <p className="text-sm text-gray-600">
-                  Create different scenarios by adjusting key assumptions and comparing outcomes.
-                </p>
-                <div className="grid grid-cols-3 gap-4">
-                  <Card className="p-3">
-                    <h5 className="font-medium text-green-600">Bull Case</h5>
-                    <p className="text-xs">Revenue Growth: 25%</p>
-                    <p className="text-xs">COGS: 60%</p>
-                  </Card>
-                  <Card className="p-3">
-                    <h5 className="font-medium text-blue-600">Base Case</h5>
-                    <p className="text-xs">Revenue Growth: 15%</p>
-                    <p className="text-xs">COGS: 65%</p>
-                  </Card>
-                  <Card className="p-3">
-                    <h5 className="font-medium text-red-600">Bear Case</h5>
-                    <p className="text-xs">Revenue Growth: 5%</p>
-                    <p className="text-xs">COGS: 70%</p>
-                  </Card>
+                
+                <div>
+                  <label className="text-sm font-medium">Projection Years</label>
+                  <Input
+                    type="number"
+                    value={assumptions.years}
+                    onChange={(e) => setAssumptions(prev => ({ ...prev, years: parseInt(e.target.value) || 5 }))}
+                  />
                 </div>
               </div>
             </TabsContent>

@@ -80,6 +80,7 @@ const AdvancedTabContent: React.FC<AdvancedTabContentProps> = ({
               <DialogTitle>Data Transformation & Power Query</DialogTitle>
             </DialogHeader>
             <DataTransformation
+              sheets={sheets}
               activeSheet={activeSheet}
               onUpdateSheet={onUpdateSheet}
             />

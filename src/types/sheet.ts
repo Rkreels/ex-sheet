@@ -1,4 +1,3 @@
-
 // Sheet and cell related types
 
 // Cell representation
@@ -151,7 +150,7 @@ export interface FormulaFunction {
   description: string;
   syntax: string;
   example: string;
-  category: 'math' | 'text' | 'logical' | 'lookup' | 'date' | 'statistical';
+  category: FormulaCategory;
   minArgs: number;
   maxArgs: number;
   execute: (args: any[]) => any;
@@ -160,8 +159,13 @@ export interface FormulaFunction {
 
 // Available formula function names
 export type FormulaFunctionName = 
-  'SUM' | 'AVERAGE' | 'COUNT' | 'MAX' | 'MIN' | 
-  'IF' | 'CONCATENATE' | 'LEFT' | 'RIGHT' | 'MID' | 
-  'TODAY' | 'NOW' | 'VLOOKUP' | 'HLOOKUP' | 'PMT' |
-  'ROUND' | 'COUNTIF' | 'SUMIF' | 'AVERAGEIF' | 'TRIM' |
-  'PROPER' | 'UPPER' | 'LOWER' | 'IFERROR' | 'AND' | 'OR' | 'NOT';
+  | 'SUM' | 'AVERAGE' | 'COUNT' | 'MAX' | 'MIN'
+  | 'IF' | 'VLOOKUP' | 'HLOOKUP' | 'XLOOKUP'
+  | 'INDEX' | 'MATCH' | 'FILTER' | 'UNIQUE' | 'SORT' | 'SEQUENCE'
+  | 'CONCATENATE' | 'LEFT' | 'RIGHT' | 'MID' | 'LEN' | 'UPPER' | 'LOWER' | 'TEXTJOIN' | 'REGEX'
+  | 'NOW' | 'TODAY' | 'DATE' | 'YEAR' | 'MONTH' | 'DAY'
+  | 'AND' | 'OR' | 'NOT' | 'IFERROR'
+  | 'STDEV' | 'VAR' | 'CORREL'
+  | 'NPV' | 'IRR' | 'PMT';
+
+export type FormulaCategory = 'text' | 'math' | 'logical' | 'lookup' | 'date' | 'statistical' | 'financial';

@@ -34,8 +34,11 @@ interface RibbonContainerProps {
   onFill?: (direction: 'down' | 'right') => void;
   onClearFormatting?: () => void;
   onFind?: () => void;
-  onFindReplace?: () => void; // Added find-replace handler
+  onFindReplace?: () => void;
   onInsert?: (type: 'cell' | 'row' | 'column') => void;
+  sheets?: any[];
+  activeSheet?: any;
+  onUpdateSheet?: (sheetId: string, updates: any) => void;
 }
 
 const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
@@ -72,8 +75,11 @@ const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
         onFill={props.onFill}
         onClearFormatting={props.onClearFormatting}
         onFind={props.onFind}
-        onFindReplace={props.onFindReplace} // Pass the find-replace handler
+        onFindReplace={props.onFindReplace}
         onInsert={props.onInsert}
+        sheets={props.sheets}
+        activeSheet={props.activeSheet}
+        onUpdateSheet={props.onUpdateSheet}
       />
     </div>
   );

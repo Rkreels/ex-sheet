@@ -1,9 +1,110 @@
 
 import { Cell } from '../types/sheet';
 
-// Advanced formula evaluation with better error handling and more functions
+// Enhanced formula functions with Excel-like capabilities
 export const advancedFormulaFunctions = {
-  // Statistical functions
+  // Lookup and Reference Functions
+  XLOOKUP: (args: any[]) => {
+    if (args.length < 3) return '#VALUE!';
+    const [lookupValue, lookupArray, returnArray, ifNotFound = '#N/A', matchMode = 0, searchMode = 1] = args;
+    
+    const lookupValues = Array.isArray(lookupArray) ? lookupArray.flat() : [lookupArray];
+    const returnValues = Array.isArray(returnArray) ? returnArray.flat() : [returnArray];
+    
+    for (let i = 0; i < lookupValues.length; i++) {
+      if (lookupValues[i] === lookupValue) {
+        return returnValues[i] || ifNotFound;
+      }
+    }
+    
+    return ifNotFound;
+  },
+
+  INDEX: (args: any[]) => {
+    if (args.length < 2) return '#VALUE!';
+    const [array, rowNum, colNum = 1] = args;
+    
+    if (Array.isArray(array)) {
+      const flatArray = array.flat();
+      const index = rowNum - 1;
+      return flatArray[index] || '#REF!';
+    }
+    
+    return array;
+  },
+
+  MATCH: (args: any[]) => {
+    if (args.length < 2) return '#VALUE!';
+    const [lookupValue, lookupArray, matchType = 1] = args;
+    
+    const values = Array.isArray(lookupArray) ? lookupArray.flat() : [lookupArray];
+    
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] === lookupValue) {
+        return i + 1; // 1-based index
+      }
+    }
+    
+    return '#N/A';
+  },
+
+  // Dynamic Array Functions
+  FILTER: (args: any[]) => {
+    if (args.length < 2) return '#VALUE!';
+    const [array, criteria] = args;
+    
+    const dataArray = Array.isArray(array) ? array : [array];
+    const criteriaArray = Array.isArray(criteria) ? criteria : [criteria];
+    
+    return dataArray.filter((item, index) => {
+      const criterion = criteriaArray[index] || criteriaArray[0];
+      return Boolean(criterion);
+    });
+  },
+
+  UNIQUE: (args: any[]) => {
+    if (args.length < 1) return '#VALUE!';
+    const [array] = args;
+    
+    const values = Array.isArray(array) ? array.flat() : [array];
+    return [...new Set(values)];
+  },
+
+  SORT: (args: any[]) => {
+    if (args.length < 1) return '#VALUE!';
+    const [array, sortIndex = 1, sortOrder = 1, byCol = false] = args;
+    
+    const values = Array.isArray(array) ? array : [array];
+    
+    return values.sort((a, b) => {
+      if (sortOrder === 1) {
+        return a > b ? 1 : -1;
+      } else {
+        return a < b ? 1 : -1;
+      }
+    });
+  },
+
+  SEQUENCE: (args: any[]) => {
+    if (args.length < 1) return '#VALUE!';
+    const [rows, columns = 1, start = 1, step = 1] = args;
+    
+    const result = [];
+    let value = start;
+    
+    for (let i = 0; i < rows; i++) {
+      const row = [];
+      for (let j = 0; j < columns; j++) {
+        row.push(value);
+        value += step;
+      }
+      result.push(row);
+    }
+    
+    return result;
+  },
+
+  // Advanced Statistical Functions
   STDEV: (args: any[]) => {
     const numbers = args.flat().filter(val => !isNaN(parseFloat(val))).map(val => parseFloat(val));
     if (numbers.length < 2) return '#N/A';
@@ -13,113 +114,123 @@ export const advancedFormulaFunctions = {
     return Math.sqrt(variance);
   },
 
-  MEDIAN: (args: any[]) => {
-    const numbers = args.flat().filter(val => !isNaN(parseFloat(val))).map(val => parseFloat(val)).sort((a, b) => a - b);
-    if (numbers.length === 0) return '#N/A';
-    
-    const mid = Math.floor(numbers.length / 2);
-    return numbers.length % 2 === 0 ? (numbers[mid - 1] + numbers[mid]) / 2 : numbers[mid];
-  },
-
-  MODE: (args: any[]) => {
-    const numbers = args.flat().filter(val => !isNaN(parseFloat(val))).map(val => parseFloat(val));
-    const frequency: Record<number, number> = {};
-    
-    numbers.forEach(num => {
-      frequency[num] = (frequency[num] || 0) + 1;
-    });
-    
-    let maxFreq = 0;
-    let mode = 0;
-    
-    Object.entries(frequency).forEach(([num, freq]) => {
-      if (freq > maxFreq) {
-        maxFreq = freq;
-        mode = parseFloat(num);
-      }
-    });
-    
-    return maxFreq > 1 ? mode : '#N/A';
-  },
-
-  // Text functions
-  SUBSTITUTE: (args: any[]) => {
-    if (args.length < 3) return '#VALUE!';
-    const [text, oldText, newText, instanceNum] = args;
-    
-    if (instanceNum) {
-      let count = 0;
-      return text.replace(new RegExp(oldText, 'g'), (match: string) => {
-        count++;
-        return count === instanceNum ? newText : match;
-      });
-    }
-    
-    return text.replace(new RegExp(oldText, 'g'), newText);
-  },
-
-  FIND: (args: any[]) => {
+  CORREL: (args: any[]) => {
     if (args.length < 2) return '#VALUE!';
-    const [findText, withinText, startNum = 1] = args;
-    const index = withinText.indexOf(findText, startNum - 1);
-    return index !== -1 ? index + 1 : '#VALUE!';
-  },
-
-  // Date functions
-  DATEDIF: (args: any[]) => {
-    if (args.length < 3) return '#VALUE!';
-    const [startDate, endDate, unit] = args;
+    const [array1, array2] = args;
     
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const x = Array.isArray(array1) ? array1.flat().map(v => parseFloat(v)).filter(v => !isNaN(v)) : [parseFloat(array1)];
+    const y = Array.isArray(array2) ? array2.flat().map(v => parseFloat(v)).filter(v => !isNaN(v)) : [parseFloat(array2)];
     
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return '#VALUE!';
+    if (x.length !== y.length || x.length === 0) return '#N/A';
     
-    const diffTime = end.getTime() - start.getTime();
+    const meanX = x.reduce((sum, val) => sum + val, 0) / x.length;
+    const meanY = y.reduce((sum, val) => sum + val, 0) / y.length;
     
-    switch (unit.toUpperCase()) {
-      case 'D':
-        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      case 'M':
-        return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-      case 'Y':
-        return end.getFullYear() - start.getFullYear();
-      default:
-        return '#VALUE!';
+    let numerator = 0;
+    let sumSqX = 0;
+    let sumSqY = 0;
+    
+    for (let i = 0; i < x.length; i++) {
+      const deltaX = x[i] - meanX;
+      const deltaY = y[i] - meanY;
+      numerator += deltaX * deltaY;
+      sumSqX += deltaX * deltaX;
+      sumSqY += deltaY * deltaY;
     }
+    
+    const denominator = Math.sqrt(sumSqX * sumSqY);
+    return denominator === 0 ? '#DIV/0!' : numerator / denominator;
   },
 
-  WEEKDAY: (args: any[]) => {
+  // Financial Functions
+  NPV: (args: any[]) => {
+    if (args.length < 2) return '#VALUE!';
+    const [rate, ...values] = args;
+    
+    const cashFlows = values.flat().map(v => parseFloat(v)).filter(v => !isNaN(v));
+    let npv = 0;
+    
+    for (let i = 0; i < cashFlows.length; i++) {
+      npv += cashFlows[i] / Math.pow(1 + rate, i + 1);
+    }
+    
+    return npv;
+  },
+
+  IRR: (args: any[]) => {
     if (args.length < 1) return '#VALUE!';
-    const date = new Date(args[0]);
-    return isNaN(date.getTime()) ? '#VALUE!' : date.getDay() + 1;
+    const [values] = args;
+    
+    const cashFlows = Array.isArray(values) ? values.flat().map(v => parseFloat(v)) : [parseFloat(values)];
+    
+    // Simple IRR calculation using Newton-Raphson method
+    let rate = 0.1; // Initial guess
+    const maxIterations = 100;
+    const tolerance = 1e-6;
+    
+    for (let i = 0; i < maxIterations; i++) {
+      let npv = 0;
+      let dnpv = 0;
+      
+      for (let j = 0; j < cashFlows.length; j++) {
+        const factor = Math.pow(1 + rate, j);
+        npv += cashFlows[j] / factor;
+        dnpv -= j * cashFlows[j] / (factor * (1 + rate));
+      }
+      
+      if (Math.abs(npv) < tolerance) {
+        return rate;
+      }
+      
+      if (dnpv === 0) {
+        return '#NUM!';
+      }
+      
+      rate = rate - npv / dnpv;
+    }
+    
+    return '#NUM!';
   },
 
-  // Logical functions
-  SWITCH: (args: any[]) => {
+  PMT: (args: any[]) => {
     if (args.length < 3) return '#VALUE!';
-    const [expression, ...cases] = args;
+    const [rate, nper, pv, fv = 0, type = 0] = args;
     
-    for (let i = 0; i < cases.length - 1; i += 2) {
-      if (expression === cases[i]) {
-        return cases[i + 1];
-      }
+    if (rate === 0) {
+      return -(pv + fv) / nper;
     }
     
-    // Return default value if provided
-    return cases.length % 2 === 1 ? cases[cases.length - 1] : '#N/A';
+    const factor = Math.pow(1 + rate, nper);
+    const payment = (rate * (pv * factor + fv)) / ((type ? 1 + rate : 1) * (factor - 1));
+    
+    return -payment;
   },
 
-  IFS: (args: any[]) => {
-    if (args.length < 2 || args.length % 2 !== 0) return '#VALUE!';
+  // Text Functions
+  TEXTJOIN: (args: any[]) => {
+    if (args.length < 3) return '#VALUE!';
+    const [delimiter, ignoreEmpty, ...textValues] = args;
     
-    for (let i = 0; i < args.length; i += 2) {
-      if (args[i]) {
-        return args[i + 1];
-      }
+    const values = textValues.flat().map(v => String(v));
+    
+    if (ignoreEmpty) {
+      return values.filter(v => v !== '').join(delimiter);
+    } else {
+      return values.join(delimiter);
     }
+  },
+
+  REGEX: (args: any[]) => {
+    if (args.length < 2) return '#VALUE!';
+    const [text, pattern, flags = 'g'] = args;
     
-    return '#N/A';
+    try {
+      const regex = new RegExp(pattern, flags);
+      const matches = String(text).match(regex);
+      return matches ? matches : '#N/A';
+    } catch (error) {
+      return '#VALUE!';
+    }
   }
 };
 

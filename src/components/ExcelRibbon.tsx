@@ -18,6 +18,7 @@ import PageLayoutTabContent from './ribbon/PageLayoutTabContent';
 import FormulasTabContent from './ribbon/FormulasTabContent';
 import DataTabContent from './ribbon/DataTabContent';
 import ReviewTabContent from './ribbon/ReviewTabContent';
+import AdvancedTabContent from './ribbon/AdvancedTabContent';
 
 interface ExcelRibbonProps {
   onBoldClick: () => void;
@@ -63,6 +64,10 @@ interface ExcelRibbonProps {
     backgroundColor?: string;
     numberFormat?: NumberFormat;
   };
+  // New props for advanced features
+  sheets?: any[];
+  activeSheet?: any;
+  onUpdateSheet?: (sheetId: string, updates: any) => void;
 }
 
 const ExcelRibbon: React.FC<ExcelRibbonProps> = ({ 
@@ -98,10 +103,13 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   onFind = () => {},
   onFindReplace = () => {},
   onInsert = () => {},
-  activeCellFormat 
+  activeCellFormat,
+  sheets = [],
+  activeSheet = null,
+  onUpdateSheet = () => {}
 }) => {
-  // Menu tabs
-  const menuTabs = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review"];
+  // Menu tabs - added Advanced tab
+  const menuTabs = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review", "Advanced"];
   const [activeTab, setActiveTab] = useState("Home");
   
   const handleTabClick = (tab: string) => {
@@ -141,6 +149,14 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
       
       case "Review":
         return <ReviewTabContent />;
+      
+      case "Advanced":
+        return <AdvancedTabContent 
+          sheets={sheets}
+          activeSheet={activeSheet}
+          onCreateChart={onCreateChart}
+          onUpdateSheet={onUpdateSheet}
+        />;
       
       default:
         return null;

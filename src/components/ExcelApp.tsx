@@ -111,8 +111,17 @@ const ExcelApp = () => {
       setIsPrintMode(false);
     }, 300);
   };
-  
-  // Initialize voice assistant
+
+  const handleUpdateSheet = (sheetId: string, updates: Partial<any>) => {
+    setSheets(prevSheets => 
+      prevSheets.map(sheet => 
+        sheet.id === sheetId 
+          ? { ...sheet, ...updates }
+          : sheet
+      )
+    );
+  };
+
   useEffect(() => {
     const voiceHandlers = {
       applyFormat,
@@ -150,7 +159,6 @@ const ExcelApp = () => {
     setVoiceEnabled(supported);
   }, []);
   
-  // Toggle voice recognition
   const toggleVoiceRecognition = () => {
     if (voiceActive) {
       const stopped = stopVoiceRecognition();
@@ -165,12 +173,11 @@ const ExcelApp = () => {
         toast.success("Voice recognition activated - try saying 'bold this cell'");
         setTimeout(() => {
           setVoiceActive(false);
-        }, 10000); // Auto-stop after 10 seconds
+        }, 10000);
       }
     }
   };
   
-  // Show help for voice commands
   const handleVoiceHelp = () => {
     showVoiceCommandsHelp();
   };
@@ -214,6 +221,9 @@ const ExcelApp = () => {
         onFind={handleFind}
         onInsert={handleInsert}
         onFindReplace={handleFindReplace}
+        sheets={sheets}
+        activeSheet={activeSheet}
+        onUpdateSheet={handleUpdateSheet}
       />
       
       {/* Voice control toggle */}

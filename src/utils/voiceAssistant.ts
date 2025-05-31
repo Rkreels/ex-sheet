@@ -1,5 +1,5 @@
 
-import { speak, getVoices } from './voiceUtils';
+import { speak, getVoices, getBestMaleVoice } from './voiceUtils';
 import { toast } from 'sonner';
 import { createVoiceCommandHandler } from './voiceCommands';
 
@@ -43,13 +43,25 @@ export const initVoiceAssistant = (commandHandlers: Record<string, Function>): b
       // Handle the command
       const handled = commandHandler?.handleCommand(transcript);
       if (!handled) {
-        speak("I didn't understand that command. Try again.");
+        speak("I didn't understand that command. Please try again or say 'help' for available commands.");
       }
     };
     
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
-      toast.error('Voice recognition error: ' + event.error);
+      const errorMessages = {
+        'no-speech': "No speech was detected. Please try speaking again.",
+        'audio-capture': "Microphone is not available. Please check your microphone settings.",
+        'not-allowed': "Microphone access was denied. Please allow microphone access and try again.",
+        'network': "Network error occurred. Please check your internet connection.",
+        'aborted': "Voice recognition was cancelled.",
+      };
+      
+      const message = errorMessages[event.error as keyof typeof errorMessages] || 
+                     `Voice recognition error: ${event.error}`;
+      
+      toast.error(message);
+      speak(message);
     };
     
     // Register global commands on window
@@ -121,16 +133,16 @@ export const showVoiceCommandsHelp = () => {
   dialog.innerHTML = `
     <h2 class="text-xl font-bold mb-4">Available Voice Commands</h2>
     <p class="mb-4">Say "voice command" and then one of the following commands:</p>
-    <div class="grid grid-cols-2 gap-2">
+    <div class="grid grid-cols-1 gap-2">
       ${commands.map(cmd => `
-        <div class="border p-2 rounded">
-          <div class="font-medium">${cmd.name}</div>
-          <div class="text-sm text-gray-600">${cmd.description}</div>
-          <div class="text-xs italic text-gray-500">Example: "${cmd.example}"</div>
+        <div class="border p-3 rounded-lg bg-gray-50">
+          <div class="font-medium text-blue-600">${cmd.name}</div>
+          <div class="text-sm text-gray-700 mt-1">${cmd.description}</div>
+          <div class="text-xs italic text-gray-500 mt-1">Say: "${cmd.example}"</div>
         </div>
       `).join('')}
     </div>
-    <button class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Close</button>
+    <button class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Close</button>
   `;
   
   document.body.appendChild(dialog);
@@ -141,8 +153,8 @@ export const showVoiceCommandsHelp = () => {
     dialog.remove();
   });
   
-  // Speak a few example commands
-  speak("Here are some voice commands you can use. For example, try saying 'bold this', 'center align', or 'sort ascending'.");
+  // Speak a more natural introduction
+  speak("Here are the voice commands you can use. For example, try saying 'make this bold', 'center align', or 'sort ascending'. You can also say 'help' anytime for assistance.");
 };
 
 /**
@@ -154,6 +166,8 @@ const registerGlobalCommands = () => {
     window.voiceCommands['help'] = () => showVoiceCommandsHelp();
     window.voiceCommands['show commands'] = () => showVoiceCommandsHelp();
     window.voiceCommands['voice commands'] = () => showVoiceCommandsHelp();
+    window.voiceCommands['what can i say'] = () => showVoiceCommandsHelp();
+    window.voiceCommands['available commands'] = () => showVoiceCommandsHelp();
   }
 };
 
@@ -162,12 +176,27 @@ const registerGlobalCommands = () => {
  */
 const voiceAssistant = {
   speak: (text: string) => {
-    speak(text);
+    // Make speech more conversational
+    const naturalText = text
+      .replace(/(\w)([A-Z])/g, '$1 $2') // Add space before capital letters
+      .replace(/([a-z])(\d)/g, '$1 $2') // Add space before numbers
+      .replace(/(\d)([a-z])/g, '$1 $2') // Add space after numbers
+      .toLowerCase()
+      .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
+    
+    speak(naturalText);
   },
   
   toggleMute: (): boolean => {
     const isMuted = localStorage.getItem('voiceMuted') === 'true';
     localStorage.setItem('voiceMuted', (!isMuted).toString());
+    
+    if (!isMuted) {
+      speak("Voice output is now muted.");
+    } else {
+      speak("Voice output is now enabled. Welcome back!");
+    }
+    
     return !isMuted;
   },
   
@@ -180,7 +209,11 @@ const voiceAssistant = {
         el.addEventListener('mouseenter', () => {
           const text = (el as HTMLElement).dataset.voiceHover;
           if (text) {
-            speak(text);
+            // Make hover text more natural
+            const naturalText = text
+              .replace(/([a-z])([A-Z])/g, '$1 $2')
+              .toLowerCase();
+            speak(naturalText);
           }
         });
       });
@@ -194,6 +227,12 @@ const voiceAssistant = {
       window.voiceCommands = {};
     }
     window.voiceCommands[command.toLowerCase()] = handler;
+  },
+  
+  // Test the improved voice
+  testVoice: () => {
+    const testMessage = "Hello! This is the improved voice output. It should sound much more natural and easier to understand. The voice is now configured to use a clearer male voice with better pronunciation and natural pauses.";
+    speak(testMessage);
   }
 };
 

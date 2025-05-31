@@ -169,3 +169,48 @@ export type FormulaFunctionName =
   | 'NPV' | 'IRR' | 'PMT';
 
 export type FormulaCategory = 'text' | 'math' | 'logical' | 'lookup' | 'date' | 'statistical' | 'financial';
+
+export interface Comment {
+  text: string;
+  author: string;
+  timestamp: string;
+}
+
+export interface SheetProtection {
+  enabled: boolean;
+  password: string;
+  allowFormatCells: boolean;
+  allowInsertRows: boolean;
+  allowDeleteRows: boolean;
+}
+
+export interface Cell {
+  value: string;
+  format?: CellFormat;
+  formula?: string;
+  calculatedValue?: any;
+  error?: string;
+  validation?: any;
+  conditionalFormat?: any;
+  comment?: Comment;
+}
+
+export interface Sheet {
+  id: string;
+  name: string;
+  cells: Record<string, Cell>;
+  columns: Record<string, ColumnDefinition>;
+  rows: Record<string, RowDefinition>;
+  activeCell: string;
+  columnWidths: Record<string, number>;
+  rowHeights: Record<number, number>;
+  history?: {
+    past: any[];
+    future: any[];
+  };
+  protection?: SheetProtection;
+  freezePanes?: {
+    row: number;
+    col: number;
+  };
+}

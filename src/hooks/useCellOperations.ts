@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Sheet, Cell, NumberFormat } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
@@ -12,6 +11,7 @@ import { useFillOperations } from './useFillOperations';
 import { useSearchOperations } from './useSearchOperations';
 import { useFormatCleaner } from './useFormatCleaner';
 import { toast } from 'sonner';
+import { createAdvancedFormulaEngine } from '../utils/advancedFormulaEngine';
 
 export const useCellOperations = (
   activeSheet: Sheet,
@@ -22,24 +22,41 @@ export const useCellOperations = (
   clipboard: {cells: Record<string, Cell>, startCell: string} | null,
   setClipboard: React.Dispatch<React.SetStateAction<{cells: Record<string, Cell>, startCell: string} | null>>
 ) => {
-  // Cell value update helper function
+  // Cell value update helper function with advanced formula evaluation
   const updateCellValue = (cellId: string, value: string) => {
-    setSheets(prevSheets => 
-      prevSheets.map(sheet => 
-        sheet.id === activeSheetId 
-          ? {
-              ...sheet,
-              cells: {
-                ...sheet.cells,
-                [cellId]: {
-                  ...sheet.cells[cellId] || {},
-                  value
-                }
-              }
+    setSheets(prevSheets => {
+      const updatedSheets = prevSheets.map(sheet => {
+        if (sheet.id === activeSheetId) {
+          const updatedCells = {
+            ...sheet.cells,
+            [cellId]: {
+              ...sheet.cells[cellId] || {},
+              value
             }
-          : sheet
-      )
-    );
+          };
+
+          // Use advanced formula engine for recalculation
+          try {
+            const engine = createAdvancedFormulaEngine(updatedCells);
+            const recalculatedCells = engine.evaluateAll();
+            
+            return {
+              ...sheet,
+              cells: recalculatedCells
+            };
+          } catch (error) {
+            console.error('Formula evaluation error:', error);
+            return {
+              ...sheet,
+              cells: updatedCells
+            };
+          }
+        }
+        return sheet;
+      });
+      
+      return updatedSheets;
+    });
   };
   
   // Import all hooks
@@ -53,20 +70,34 @@ export const useCellOperations = (
   const searchOps = useSearchOperations(activeSheet, activeSheetId, setSheets);
   const formatCleaner = useFormatCleaner(activeSheet, activeSheetId, activeCell, cellSelection, setSheets);
 
-  // Formula evaluation effect - with error handling
+  // Enhanced formula evaluation effect
   useEffect(() => {
     if (!activeSheet?.cells) return;
     
-    Object.entries(activeSheet.cells).forEach(([cellId, cell]) => {
-      if (cell && cell.value && cell.value.startsWith('=')) {
-        try {
-          evaluateFormula(cell.value.substring(1), activeSheet.cells);
-        } catch (error) {
-          console.error(`Error evaluating formula in ${cellId}:`, error);
-        }
+    try {
+      const engine = createAdvancedFormulaEngine(activeSheet.cells);
+      const updatedCells = engine.evaluateAll();
+      
+      // Only update if there are actual changes
+      const hasChanges = Object.keys(updatedCells).some(cellId => {
+        const current = activeSheet.cells[cellId];
+        const updated = updatedCells[cellId];
+        return current?.calculatedValue !== updated?.calculatedValue;
+      });
+
+      if (hasChanges) {
+        setSheets(prevSheets => 
+          prevSheets.map(sheet => 
+            sheet.id === activeSheetId 
+              ? { ...sheet, cells: updatedCells }
+              : sheet
+          )
+        );
       }
-    });
-  }, [activeSheet?.cells, activeSheetId]);
+    } catch (error) {
+      console.error('Advanced formula evaluation error:', error);
+    }
+  }, [activeSheet?.cells, activeSheetId, setSheets]);
 
   // Insert cell/row/column
   const handleInsert = (type: 'cell' | 'row' | 'column') => {

@@ -1,155 +1,144 @@
 
 import React, { useState } from 'react';
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import RibbonSection from './RibbonSection';
+import { Button } from '../ui/button';
 import DashboardManager from '../dashboard/DashboardManager';
-import FinancialModeling from '../analysis/FinancialModeling';
-import DataTransformation from '../analysis/DataTransformation';
-import WhatIfAnalysis from '../analysis/WhatIfAnalysis';
-import ProjectManagement from '../analysis/ProjectManagement';
-import { BarChart3, Calculator, Database, TrendingUp, Target, Calendar, Globe, FileSpreadsheet } from 'lucide-react';
+import AdvancedFeatures from '../features/AdvancedFeatures';
+import { BarChart3, Database, Settings, TrendingUp, Filter, FileSpreadsheet, Shield, Eye, MessageSquare } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface AdvancedTabContentProps {
-  sheets: any[];
-  activeSheet: any;
-  onCreateChart: (chartData: any) => void;
-  onUpdateSheet: (sheetId: string, updates: any) => void;
+  sheets?: any[];
+  activeSheet?: any;
+  onCreateChart?: (chartData: any) => void;
+  onUpdateSheet?: (sheetId: string, updates: any) => void;
 }
 
 const AdvancedTabContent: React.FC<AdvancedTabContentProps> = ({
-  sheets,
-  activeSheet,
-  onCreateChart,
-  onUpdateSheet
+  sheets = [],
+  activeSheet = null,
+  onCreateChart = () => {},
+  onUpdateSheet = () => {}
 }) => {
-  const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [activeFeature, setActiveFeature] = useState<string>('dashboard');
+
+  // Mock functions for demonstration - these would be passed from parent
+  const mockProps = {
+    activeCell: 'A1',
+    selectedRange: 'A1:C3',
+    onCreateSheet: () => {},
+    onUpdateCell: () => {},
+    onUpdateCells: () => {}
+  };
 
   return (
-    <div className="flex p-2">
-      <RibbonSection title="Business Intelligence" voiceCommand="open dashboard">
-        <Dialog open={activeDialog === 'dashboard'} onOpenChange={(open) => setActiveDialog(open ? 'dashboard' : null)}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <BarChart3 className="w-6 h-6 mb-1" />
-              <span className="text-xs">Dashboard</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Dashboard Builder</DialogTitle>
-            </DialogHeader>
-            <DashboardManager
-              sheets={sheets}
-              activeSheet={activeSheet}
-              onCreateChart={onCreateChart}
-              onUpdateSheet={onUpdateSheet}
-            />
-          </DialogContent>
-        </Dialog>
-      </RibbonSection>
+    <div className="flex flex-col space-y-4 p-4">
+      <div className="flex flex-wrap gap-2">
+        <RibbonSection title="Analytics">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('dashboard')}
+            className={activeFeature === 'dashboard' ? 'bg-blue-100' : ''}
+          >
+            <BarChart3 className="w-4 h-4 mr-1" />
+            Dashboard
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('pivot')}
+          >
+            <Database className="w-4 h-4 mr-1" />
+            PivotTable
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('kpi')}
+          >
+            <TrendingUp className="w-4 h-4 mr-1" />
+            KPI
+          </Button>
+        </RibbonSection>
 
-      <RibbonSection title="Financial Analysis" voiceCommand="open financial modeling">
-        <Dialog open={activeDialog === 'financial'} onOpenChange={(open) => setActiveDialog(open ? 'financial' : null)}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Calculator className="w-6 h-6 mb-1" />
-              <span className="text-xs">Financial</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Financial Modeling Suite</DialogTitle>
-            </DialogHeader>
-            <FinancialModeling
-              activeSheet={activeSheet}
-              onUpdateSheet={onUpdateSheet}
-            />
-          </DialogContent>
-        </Dialog>
-      </RibbonSection>
+        <RibbonSection title="Data Tools">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('validation')}
+          >
+            <Shield className="w-4 h-4 mr-1" />
+            Validation
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('formatting')}
+          >
+            <Settings className="w-4 h-4 mr-1" />
+            Conditional
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('filter')}
+          >
+            <Filter className="w-4 h-4 mr-1" />
+            Slicer
+          </Button>
+        </RibbonSection>
 
-      <RibbonSection title="Data Tools" voiceCommand="open data transformation">
-        <Dialog open={activeDialog === 'data'} onOpenChange={(open) => setActiveDialog(open ? 'data' : null)}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Database className="w-6 h-6 mb-1" />
-              <span className="text-xs">Power Query</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Data Transformation & Power Query</DialogTitle>
-            </DialogHeader>
-            <DataTransformation
-              sheets={sheets}
-              activeSheet={activeSheet}
-              onUpdateSheet={onUpdateSheet}
-            />
-          </DialogContent>
-        </Dialog>
-      </RibbonSection>
+        <RibbonSection title="Import/Export">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('import')}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1" />
+            Import/Export
+          </Button>
+        </RibbonSection>
 
-      <RibbonSection title="What-If Analysis" voiceCommand="scenario analysis">
-        <Dialog open={activeDialog === 'whatif'} onOpenChange={(open) => setActiveDialog(open ? 'whatif' : null)}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Target className="w-6 h-6 mb-1" />
-              <span className="text-xs">Scenarios</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>What-If Analysis & Scenario Modeling</DialogTitle>
-            </DialogHeader>
-            <WhatIfAnalysis
-              activeSheet={activeSheet}
-              onUpdateSheet={onUpdateSheet}
-            />
-          </DialogContent>
-        </Dialog>
-      </RibbonSection>
+        <RibbonSection title="View">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('view')}
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            View Tools
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveFeature('comments')}
+          >
+            <MessageSquare className="w-4 h-4 mr-1" />
+            Comments
+          </Button>
+        </RibbonSection>
+      </div>
 
-      <RibbonSection title="Project Management" voiceCommand="project tools">
-        <Dialog open={activeDialog === 'project'} onOpenChange={(open) => setActiveDialog(open ? 'project' : null)}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex flex-col items-center p-2 h-auto">
-              <Calendar className="w-6 h-6 mb-1" />
-              <span className="text-xs">Gantt Chart</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Project Management Tools</DialogTitle>
-            </DialogHeader>
-            <ProjectManagement
-              activeSheet={activeSheet}
-              onUpdateSheet={onUpdateSheet}
-            />
-          </DialogContent>
-        </Dialog>
-      </RibbonSection>
-
-      <RibbonSection title="Advanced Analytics" voiceCommand="advanced analytics">
-        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
-          <TrendingUp className="w-6 h-6 mb-1" />
-          <span className="text-xs">Analytics</span>
-        </Button>
-      </RibbonSection>
-
-      <RibbonSection title="External Data" voiceCommand="external data">
-        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
-          <Globe className="w-6 h-6 mb-1" />
-          <span className="text-xs">Web Data</span>
-        </Button>
-      </RibbonSection>
-
-      <RibbonSection title="Automation" voiceCommand="automation tools">
-        <Button variant="outline" className="flex flex-col items-center p-2 h-auto" disabled>
-          <FileSpreadsheet className="w-6 h-6 mb-1" />
-          <span className="text-xs">Macros</span>
-        </Button>
-      </RibbonSection>
+      <div className="flex-1">
+        {activeFeature === 'dashboard' && (
+          <DashboardManager
+            sheets={sheets}
+            activeSheet={activeSheet}
+            onCreateChart={onCreateChart}
+            onUpdateSheet={onUpdateSheet}
+          />
+        )}
+        
+        {activeFeature !== 'dashboard' && (
+          <AdvancedFeatures
+            sheets={sheets}
+            activeSheet={activeSheet}
+            {...mockProps}
+            onUpdateSheet={onUpdateSheet}
+          />
+        )}
+      </div>
     </div>
   );
 };

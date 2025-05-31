@@ -19,8 +19,7 @@ const InsertTabContent: React.FC<InsertTabContentProps> = ({ onCreateChart }) =>
               title: 'Sales Chart',
               data: [],
               labels: [],
-              selection: { startCell: 'A1', endCell: 'B5' },
-              dataRange: 'A1:B5' // Added missing dataRange property
+              dataRange: { startCell: 'A1', endCell: 'B5' }
             })}
             data-voice-command="insert bar chart"
           >

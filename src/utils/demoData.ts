@@ -55,16 +55,5 @@ export function generateDemoData(): Record<string, Cell> {
     format: { alignment: 'left', bold: true } 
   };
 
-  // Add column widths for better display
-  for (let i = 0; i < 5; i++) {
-    const columnWidth = i === 0 ? 100 : i === 1 ? 150 : i === 2 ? 100 : i === 3 ? 120 : 200;
-    for (let j = 1; j <= 15; j++) {
-      const cellId = `${String.fromCharCode(65 + i)}${j}`;
-      if (demoData[cellId]) {
-        demoData[cellId].columnWidth = columnWidth;
-      }
-    }
-  }
-
   return demoData;
 }

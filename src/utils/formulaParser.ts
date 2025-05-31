@@ -110,9 +110,9 @@ export const extractAndEvaluateFunctions = (formula: string, cells: Record<strin
         funcName === 'MAX' || funcName === 'COUNT') {
       // Flatten nested arrays from range arguments
       const flatArgs = processedArgs.flat(Infinity);
-      funcResult = func.execute(...flatArgs);
+      funcResult = func.execute(flatArgs);
     } else {
-      funcResult = func.execute(...processedArgs);
+      funcResult = func.execute(processedArgs);
     }
     
     // Replace the function call with its result

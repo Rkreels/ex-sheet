@@ -28,7 +28,9 @@ export const useSheetManagement = ({
       { 
         id: newSheetId, 
         name: newSheetName, 
-        cells: {}, 
+        cells: {},
+        columns: {},
+        rows: {},
         activeCell: 'A1', 
         columnWidths: {}, 
         rowHeights: {},

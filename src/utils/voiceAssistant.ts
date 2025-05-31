@@ -201,8 +201,8 @@ const voiceAssistant = {
 declare global {
   interface Window {
     voiceCommands?: Record<string, () => void>;
-    SpeechRecognition?: typeof SpeechRecognition;
-    webkitSpeechRecognition?: typeof SpeechRecognition;
+    SpeechRecognition?: any;
+    webkitSpeechRecognition?: any;
   }
 }
 

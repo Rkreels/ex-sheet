@@ -197,13 +197,4 @@ const voiceAssistant = {
   }
 };
 
-// Add the voiceCommands interface to Window
-declare global {
-  interface Window {
-    voiceCommands?: Record<string, () => void>;
-    SpeechRecognition?: any;
-    webkitSpeechRecognition?: any;
-  }
-}
-
 export default voiceAssistant;

@@ -9,23 +9,22 @@ import voiceAssistant from './voiceAssistant';
 export const initializeVoiceTrainer = () => {
   // Initialize spreadsheet navigation commands
   const cellCommands = [
-    { name: "go to cell", handler: (args: string) => {
-      const cell = args.toUpperCase();
-      const cellElement = document.querySelector(`[data-cell-id="${cell}"]`);
-      if (cellElement) {
-        (cellElement as HTMLElement).click();
-        return `Navigated to cell ${cell}`;
+    { name: "go to cell", handler: () => {
+      // Basic cell navigation handler
+      const activeCell = document.querySelector(`[data-active="true"]`);
+      if (activeCell) {
+        (activeCell as HTMLElement).focus();
+        return "Navigated to cell";
       }
-      return `Could not find cell ${cell}`;
+      return "Could not find cell";
     }},
-    { name: "select cell", handler: (args: string) => {
-      const cell = args.toUpperCase();
-      const cellElement = document.querySelector(`[data-cell-id="${cell}"]`);
-      if (cellElement) {
-        (cellElement as HTMLElement).click();
-        return `Selected cell ${cell}`;
+    { name: "select cell", handler: () => {
+      const activeCell = document.querySelector(`[data-active="true"]`);
+      if (activeCell) {
+        (activeCell as HTMLElement).click();
+        return "Selected cell";
       }
-      return `Could not find cell ${cell}`;
+      return "Could not find cell";
     }},
     { name: "edit cell", handler: () => {
       const activeCell = document.querySelector(`[data-active="true"]`);

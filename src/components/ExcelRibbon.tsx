@@ -7,7 +7,7 @@ import NumberSection from './ribbon/NumberSection';
 import CellsSection from './ribbon/CellsSection';
 import EditingSection from './ribbon/EditingSection';
 import HistorySection from './ribbon/HistorySection';
-import { ChartData, NumberFormat, CellSelection } from '../types/sheet';
+import { ChartData, NumberFormat, CellSelection, Sheet } from '../types/sheet';
 import { Toaster } from 'sonner';
 import RibbonSection from './ribbon/RibbonSection';
 
@@ -21,92 +21,69 @@ import ReviewTabContent from './ribbon/ReviewTabContent';
 import AdvancedTabContent from './ribbon/AdvancedTabContent';
 
 interface ExcelRibbonProps {
-  onBoldClick: () => void;
-  onItalicClick: () => void;
-  onUnderlineClick: () => void;
-  onAlignLeftClick: () => void;
-  onAlignCenterClick: () => void;
-  onAlignRightClick: () => void;
-  onCut: () => void;
+  activeSheet: Sheet;
+  activeCell: string;
+  cellSelection: CellSelection | null;
+  onCellChange: (cellId: string, value: string) => void;
+  onFormatApply: (formatType: 'bold' | 'italic' | 'underline') => void;
+  onAlignmentApply: (alignment: 'left' | 'center' | 'right') => void;
+  onFontSizeApply: (size: string) => void;
+  onFontFamilyApply: (family: string) => void;
+  onColorApply: (color: string) => void;
+  onBackgroundColorApply: (color: string) => void;
+  onNumberFormatApply: (format: NumberFormat) => void;
+  onSortAsc: () => void;
+  onSortDesc: () => void;
   onCopy: () => void;
+  onCut: () => void;
   onPaste: () => void;
-  onFormatPainter?: () => void;
-  onPercentClick: () => void;
-  onMergeCenter?: () => void;
-  onWrapText?: () => void;
-  onCurrencyFormat?: () => void;
-  onFontSizeChange?: (size: string) => void;
-  onFontFamilyChange?: (font: string) => void;
-  onColorChange?: (color: string) => void;
-  onBackgroundColorChange?: (color: string) => void;
-  onDelete?: () => void;
-  onSortAsc?: () => void;
-  onSortDesc?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  onPrint?: () => void;
-  onCreateChart?: (chartData: ChartData) => void;
-  onNumberFormatChange?: (format: NumberFormat) => void;
-  onAutoSum?: () => void;
-  onFill?: (direction: 'down' | 'right') => void;
-  onClearFormatting?: () => void;
-  onFind?: () => void;
-  onFindReplace?: () => void;
-  onInsert?: (type: 'cell' | 'row' | 'column') => void;
-  activeCellFormat: {
-    bold?: boolean;
-    italic?: boolean;
-    alignment?: string;
-    underline?: boolean;
-    fontSize?: string;
-    fontFamily?: string;
-    color?: string;
-    backgroundColor?: string;
-    numberFormat?: NumberFormat;
-  };
-  // New props for advanced features
-  sheets?: any[];
-  activeSheet?: any;
-  onUpdateSheet?: (sheetId: string, updates: any) => void;
+  onDelete: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onMergeCenter: () => void;
+  onAutoSum: () => void;
+  onInsert: (type: 'cell' | 'row' | 'column') => void;
+  onFind: () => void;
+  onFindReplace: () => void;
+  onPercentFormat: () => void;
+  onCurrencyFormat: () => void;
+  onFormatPainter: () => void;
+  onFill: (direction: 'down' | 'right') => void;
+  onClearFormatting: () => void;
+  onDemoData: (demoData: Record<string, any>) => void;
 }
 
 const ExcelRibbon: React.FC<ExcelRibbonProps> = ({ 
-  onBoldClick, 
-  onItalicClick, 
-  onUnderlineClick,
-  onAlignLeftClick, 
-  onAlignCenterClick, 
-  onAlignRightClick,
-  onCut,
+  activeSheet,
+  activeCell,
+  cellSelection,
+  onCellChange,
+  onFormatApply,
+  onAlignmentApply,
+  onFontSizeApply,
+  onFontFamilyApply,
+  onColorApply,
+  onBackgroundColorApply,
+  onNumberFormatApply,
+  onSortAsc,
+  onSortDesc,
   onCopy,
+  onCut,
   onPaste,
-  onPercentClick,
-  onFormatPainter = () => {},
-  onMergeCenter = () => {},
-  onWrapText = () => {},
-  onCurrencyFormat = () => {},
-  onFontSizeChange = () => {},
-  onFontFamilyChange = () => {},
-  onColorChange = () => {},
-  onBackgroundColorChange = () => {},
-  onDelete = () => {},
-  onSortAsc = () => {},
-  onSortDesc = () => {},
-  onUndo = () => {},
-  onRedo = () => {},
-  onPrint = () => {},
-  onCreateChart = () => {},
-  onNumberFormatChange = () => {},
-  onAutoSum = () => {},
-  onFill = () => {},
-  onClearFormatting = () => {},
-  onFind = () => {},
-  onFindReplace = () => {},
-  onInsert = () => {},
-  activeCellFormat,
-  sheets = [],
-  activeSheet = null,
-  onUpdateSheet = () => {}
+  onDelete,
+  onUndo,
+  onRedo,
+  onMergeCenter,
+  onAutoSum,
+  onInsert,
+  onFind,
+  onFindReplace,
+  onPercentFormat,
+  onCurrencyFormat,
+  onFormatPainter,
+  onFill,
+  onClearFormatting,
+  onDemoData
 }) => {
   // Menu tabs - added Advanced tab
   const menuTabs = ["Home", "Insert", "Page Layout", "Formulas", "Data", "Review", "Advanced"];
@@ -115,28 +92,39 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
   };
+
+  // Get active cell format
+  const activeCellFormat = activeSheet?.cells?.[activeCell] || {};
   
   const renderTabContent = () => {
     switch(activeTab) {
       case "Home":
         return <HomeTabContent {...{
-          onCut, onCopy, onPaste, onFormatPainter, 
-          onBoldClick, onItalicClick, onUnderlineClick, 
-          onFontSizeChange, onFontFamilyChange, 
-          onColorChange, onBackgroundColorChange,
-          onCurrencyFormat, onPercentClick, 
-          onAlignLeftClick, onAlignCenterClick, onAlignRightClick,
-          onWrapText, onMergeCenter, 
-          onNumberFormatChange,
+          onCut, onCopy, onPaste, onFormatPainter: onFormatPainter, 
+          onBoldClick: () => onFormatApply('bold'), 
+          onItalicClick: () => onFormatApply('italic'), 
+          onUnderlineClick: () => onFormatApply('underline'), 
+          onFontSizeChange: onFontSizeApply, 
+          onFontFamilyChange: onFontFamilyApply, 
+          onColorChange: onColorApply, 
+          onBackgroundColorChange: onBackgroundColorApply,
+          onCurrencyFormat: onCurrencyFormat, 
+          onPercentClick: onPercentFormat, 
+          onAlignLeftClick: () => onAlignmentApply('left'), 
+          onAlignCenterClick: () => onAlignmentApply('center'), 
+          onAlignRightClick: () => onAlignmentApply('right'),
+          onWrapText: () => {}, 
+          onMergeCenter: onMergeCenter, 
+          onNumberFormatChange: onNumberFormatApply,
           onDelete, onInsert, 
           onAutoSum, onFill, onClearFormatting, 
           onFind, onFindReplace, onSortAsc, onSortDesc,
-          onUndo, onRedo, onPrint,
+          onUndo, onRedo, onPrint: () => {},
           activeCellFormat
         }} />;
       
       case "Insert":
-        return <InsertTabContent onCreateChart={onCreateChart} />;
+        return <InsertTabContent onCreateChart={() => {}} />;
       
       case "Page Layout":
         return <PageLayoutTabContent />;
@@ -152,10 +140,10 @@ const ExcelRibbon: React.FC<ExcelRibbonProps> = ({
       
       case "Advanced":
         return <AdvancedTabContent 
-          sheets={sheets}
+          sheets={[activeSheet]}
           activeSheet={activeSheet}
-          onCreateChart={onCreateChart}
-          onUpdateSheet={onUpdateSheet}
+          onCreateChart={() => {}}
+          onUpdateSheet={() => {}}
         />;
       
       default:

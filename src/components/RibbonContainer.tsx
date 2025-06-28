@@ -1,85 +1,75 @@
 
 import React from 'react';
 import ExcelRibbon from './ExcelRibbon';
-import { ChartData, NumberFormat } from '../types/sheet';
+import { ChartData, NumberFormat, CellSelection, Sheet } from '../types/sheet';
 
 interface RibbonContainerProps {
-  onBoldClick: () => void;
-  onItalicClick: () => void;
-  onUnderlineClick: () => void;
-  onAlignLeftClick: () => void;
-  onAlignCenterClick: () => void;
-  onAlignRightClick: () => void;
-  onCut: () => void;
-  onCopy: () => void;
-  onPaste: () => void;
-  onFormatPainter: () => void;
-  onPercentClick: () => void;
-  onCurrencyFormat: () => void;
-  onMergeCenter: () => void;
-  activeCellFormat: Record<string, any>;
-  onFontSizeChange: (size: string) => void;
-  onFontFamilyChange: (font: string) => void;
-  onColorChange: (color: string) => void;
-  onBackgroundColorChange: (color: string) => void;
-  onDelete: () => void;
+  activeSheet: Sheet;
+  activeCell: string;
+  cellSelection: CellSelection | null;
+  onCellChange: (cellId: string, value: string) => void;
+  onFormatApply: (formatType: 'bold' | 'italic' | 'underline') => void;
+  onAlignmentApply: (alignment: 'left' | 'center' | 'right') => void;
+  onFontSizeApply: (size: string) => void;
+  onFontFamilyApply: (family: string) => void;
+  onColorApply: (color: string) => void;
+  onBackgroundColorApply: (color: string) => void;
+  onNumberFormatApply: (format: NumberFormat) => void;
   onSortAsc: () => void;
   onSortDesc: () => void;
+  onCopy: () => void;
+  onCut: () => void;
+  onPaste: () => void;
+  onDelete: () => void;
   onUndo: () => void;
   onRedo: () => void;
-  onPrint: () => void;
-  onCreateChart: (chartData: ChartData) => void;
-  onNumberFormatChange?: (format: NumberFormat) => void;
-  onAutoSum?: () => void;
-  onFill?: (direction: 'down' | 'right') => void;
-  onClearFormatting?: () => void;
-  onFind?: () => void;
-  onFindReplace?: () => void;
-  onInsert?: (type: 'cell' | 'row' | 'column') => void;
-  sheets?: any[];
-  activeSheet?: any;
-  onUpdateSheet?: (sheetId: string, updates: any) => void;
+  onMergeCenter: () => void;
+  onAutoSum: () => void;
+  onInsert: (type: 'cell' | 'row' | 'column') => void;
+  onFind: () => void;
+  onFindReplace: () => void;
+  onPercentFormat: () => void;
+  onCurrencyFormat: () => void;
+  onFormatPainter: () => void;
+  onFill: (direction: 'down' | 'right') => void;
+  onClearFormatting: () => void;
+  onDemoData: (demoData: Record<string, any>) => void;
 }
 
 const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {
   return (
     <div className="flex-none print:hidden">
       <ExcelRibbon 
-        onBoldClick={props.onBoldClick} 
-        onItalicClick={props.onItalicClick}
-        onUnderlineClick={props.onUnderlineClick}
-        onAlignLeftClick={props.onAlignLeftClick}
-        onAlignCenterClick={props.onAlignCenterClick}
-        onAlignRightClick={props.onAlignRightClick}
-        onCut={props.onCut}
-        onCopy={props.onCopy}
-        onPaste={props.onPaste}
-        onFormatPainter={props.onFormatPainter}
-        onPercentClick={props.onPercentClick}
-        onCurrencyFormat={props.onCurrencyFormat}
-        onMergeCenter={props.onMergeCenter}
-        activeCellFormat={props.activeCellFormat}
-        onFontSizeChange={props.onFontSizeChange}
-        onFontFamilyChange={props.onFontFamilyChange}
-        onColorChange={props.onColorChange}
-        onBackgroundColorChange={props.onBackgroundColorChange}
-        onDelete={props.onDelete}
+        activeSheet={props.activeSheet}
+        activeCell={props.activeCell}
+        cellSelection={props.cellSelection}
+        onCellChange={props.onCellChange}
+        onFormatApply={props.onFormatApply}
+        onAlignmentApply={props.onAlignmentApply}
+        onFontSizeApply={props.onFontSizeApply}
+        onFontFamilyApply={props.onFontFamilyApply}
+        onColorApply={props.onColorApply}
+        onBackgroundColorApply={props.onBackgroundColorApply}
+        onNumberFormatApply={props.onNumberFormatApply}
         onSortAsc={props.onSortAsc}
         onSortDesc={props.onSortDesc}
+        onCopy={props.onCopy}
+        onCut={props.onCut}
+        onPaste={props.onPaste}
+        onDelete={props.onDelete}
         onUndo={props.onUndo}
         onRedo={props.onRedo}
-        onPrint={props.onPrint}
-        onCreateChart={props.onCreateChart}
-        onNumberFormatChange={props.onNumberFormatChange}
+        onMergeCenter={props.onMergeCenter}
         onAutoSum={props.onAutoSum}
-        onFill={props.onFill}
-        onClearFormatting={props.onClearFormatting}
+        onInsert={props.onInsert}
         onFind={props.onFind}
         onFindReplace={props.onFindReplace}
-        onInsert={props.onInsert}
-        sheets={props.sheets}
-        activeSheet={props.activeSheet}
-        onUpdateSheet={props.onUpdateSheet}
+        onPercentFormat={props.onPercentFormat}
+        onCurrencyFormat={props.onCurrencyFormat}
+        onFormatPainter={props.onFormatPainter}
+        onFill={props.onFill}
+        onClearFormatting={props.onClearFormatting}
+        onDemoData={props.onDemoData}
       />
     </div>
   );

@@ -1,108 +1,53 @@
 
-import { initializeVoiceTrainer, announceVoiceCommands } from './voiceTrainer';
-import voiceAssistant from './voiceAssistant';
-import { getBestMaleVoice, testSpeech } from './voiceUtils';
-
 /**
- * Initialize all application features
+ * Initialize the Excel application with all required features
  */
-export const initializeApp = () => {
+const initializeApp = () => {
+  console.log('Initializing Excel Application...');
+  
   // Initialize voice commands
-  try {
-    initializeVoiceTrainer();
-    
-    // Test and set up voice after a short delay
-    setTimeout(() => {
-      // Log available voices for debugging
-      const bestVoice = getBestMaleVoice();
-      if (bestVoice) {
-        console.log('Using voice:', bestVoice.name);
-      }
-      
-      // Welcome message with more natural speech
-      voiceAssistant.speak("Welcome to Excel Online! Voice commands are now active. You can say 'help' anytime to hear available commands.");
-      
-      // Announce commands after welcome
-      setTimeout(() => {
-        announceVoiceCommands();
-      }, 3000);
-    }, 1500);
-  } catch (error) {
-    console.error("Error initializing voice trainer:", error);
+  if ('speechSynthesis' in window) {
+    console.log('Voice synthesis available');
   }
   
-  // Initialize global keyboard shortcuts
-  initializeKeyboardShortcuts();
-  
-  // Set up event listeners for application-wide events
-  setupGlobalEvents();
-  
-  console.log("Application initialized successfully");
-};
-
-/**
- * Initialize keyboard shortcuts for the application
- */
-const initializeKeyboardShortcuts = () => {
+  // Initialize keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    // Ctrl+S for Save
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      voiceAssistant.speak("Document saved successfully");
-      console.log("Save shortcut triggered");
-    }
-    
-    // Ctrl+F for Find
-    if (e.ctrlKey && e.key === 'f') {
-      e.preventDefault();
-      const findButton = document.querySelector('[data-voice-command="find"]');
-      if (findButton) {
-        (findButton as HTMLElement).click();
-        voiceAssistant.speak("Find dialog opened");
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case 'z':
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('excel-undo'));
+          break;
+        case 'y':
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('excel-redo'));
+          break;
+        case 'c':
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('excel-copy'));
+          break;
+        case 'v':
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('excel-paste'));
+          break;
+        case 's':
+          e.preventDefault();
+          document.dispatchEvent(new CustomEvent('excel-save'));
+          break;
       }
     }
-    
-    // Ctrl+H for voice help
-    if (e.ctrlKey && e.key === 'h') {
-      e.preventDefault();
-      voiceAssistant.speak("Here are the available voice commands");
-      setTimeout(() => {
-        const helpButton = document.querySelector('[data-voice-hover="voice help"]');
-        if (helpButton) {
-          (helpButton as HTMLElement).click();
-        }
-      }, 1000);
-    }
-  });
-};
-
-/**
- * Setup global event listeners
- */
-const setupGlobalEvents = () => {
-  // Listen for custom events
-  document.addEventListener('sheet-changed', (e: Event) => {
-    console.log("Sheet changed event detected");
-    voiceAssistant.speak("Sheet has been updated");
   });
   
-  // Monitor visibility changes
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      console.log("App visibility: active");
-    } else {
-      console.log("App visibility: hidden");
-    }
-  });
+  // Initialize responsive design
+  const updateViewport = () => {
+    const isMobile = window.innerWidth < 768;
+    document.body.classList.toggle('mobile-view', isMobile);
+  };
   
-  // Add voice test button for debugging (development only)
-  if (process.env.NODE_ENV === 'development') {
-    const testButton = document.createElement('button');
-    testButton.textContent = 'Test Voice';
-    testButton.style.cssText = 'position:fixed;top:10px;left:10px;z-index:9999;padding:5px;background:#007bff;color:white;border:none;border-radius:3px;font-size:12px;';
-    testButton.onclick = () => voiceAssistant.testVoice();
-    document.body.appendChild(testButton);
-  }
+  window.addEventListener('resize', updateViewport);
+  updateViewport();
+  
+  console.log('Excel Application initialized successfully');
 };
 
 export default initializeApp;

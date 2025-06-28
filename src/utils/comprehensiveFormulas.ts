@@ -136,7 +136,7 @@ export const comprehensiveFormulas = {
     data.forEach(value => {
       const num = parseFloat(value);
       if (!isNaN(num)) {
-        let binIndex = bins.findIndex(bin => num <= bin);
+        let binIndex = bins.findIndex(bin => num <= Number(bin) || 0);
         if (binIndex === -1) binIndex = bins.length;
         result[binIndex]++;
       }
@@ -148,7 +148,7 @@ export const comprehensiveFormulas = {
     const values = (Array.isArray(array) ? array.flat() : [array])
       .map(val => parseFloat(val))
       .filter(val => !isNaN(val))
-      .sort((a, b) => b - a);
+      .sort((a, b) => (Number(b) || 0) - (Number(a) || 0));
     const kNum = Number(k);
     return values[kNum - 1] || '#NUM!';
   },
@@ -423,6 +423,7 @@ export const comprehensiveFormulas = {
       if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(current.toDateString())) {
         workdaysAdded++;
       }
+      current.toLocaleDateString();
     }
     
     return current.toLocaleDateString();

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -6,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { BarChart3, LineChart, PieChart, ScatterChart, AreaChart, RadarChart } from 'lucide-react';
+import { BarChart3, LineChart, PieChart, ScatterChart, AreaChart, Activity } from 'lucide-react';
 
 interface ChartCreatorProps {
   onCreateChart: (chartConfig: any) => void;
@@ -33,7 +32,7 @@ const ChartCreator: React.FC<ChartCreatorProps> = ({
     { value: 'pie', label: 'Pie Chart', icon: PieChart },
     { value: 'scatter', label: 'Scatter Plot', icon: ScatterChart },
     { value: 'area', label: 'Area Chart', icon: AreaChart },
-    { value: 'radar', label: 'Radar Chart', icon: RadarChart }
+    { value: 'radar', label: 'Radar Chart', icon: Activity }
   ];
 
   const handleCreateChart = () => {

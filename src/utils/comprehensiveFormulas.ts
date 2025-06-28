@@ -1,65 +1,89 @@
-
 import { Cell } from '../types/sheet';
 
 // Comprehensive Excel-like formula functions
 export const comprehensiveFormulas = {
   // Math & Trigonometry Functions
-  ABS: (args: any[]) => Math.abs(args[0]),
-  ACOS: (args: any[]) => Math.acos(args[0]),
-  ASIN: (args: any[]) => Math.asin(args[0]),
-  ATAN: (args: any[]) => Math.atan(args[0]),
-  ATAN2: (args: any[]) => Math.atan2(args[0], args[1]),
-  CEILING: (args: any[]) => Math.ceil(args[0]),
-  COS: (args: any[]) => Math.cos(args[0]),
-  DEGREES: (args: any[]) => args[0] * (180 / Math.PI),
-  EXP: (args: any[]) => Math.exp(args[0]),
+  ABS: (args: any[]) => Math.abs(Number(args[0]) || 0),
+  ACOS: (args: any[]) => Math.acos(Number(args[0]) || 0),
+  ASIN: (args: any[]) => Math.asin(Number(args[0]) || 0),
+  ATAN: (args: any[]) => Math.atan(Number(args[0]) || 0),
+  ATAN2: (args: any[]) => Math.atan2(Number(args[0]) || 0, Number(args[1]) || 0),
+  CEILING: (args: any[]) => Math.ceil(Number(args[0]) || 0),
+  COS: (args: any[]) => Math.cos(Number(args[0]) || 0),
+  DEGREES: (args: any[]) => (Number(args[0]) || 0) * (180 / Math.PI),
+  EXP: (args: any[]) => Math.exp(Number(args[0]) || 0),
   FACT: (args: any[]) => {
-    const n = args[0];
+    const n = Number(args[0]) || 0;
     if (n < 0) return '#NUM!';
     let result = 1;
     for (let i = 2; i <= n; i++) result *= i;
     return result;
   },
-  FLOOR: (args: any[]) => Math.floor(args[0]),
+  FLOOR: (args: any[]) => Math.floor(Number(args[0]) || 0),
   GCD: (args: any[]) => {
     const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
-    return args.reduce(gcd);
+    const numbers = args.map(arg => Number(arg) || 0);
+    return numbers.reduce(gcd);
   },
-  INT: (args: any[]) => Math.floor(args[0]),
+  INT: (args: any[]) => Math.floor(Number(args[0]) || 0),
   LCM: (args: any[]) => {
     const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
     const lcm = (a: number, b: number) => Math.abs(a * b) / gcd(a, b);
-    return args.reduce(lcm);
+    const numbers = args.map(arg => Number(arg) || 0);
+    return numbers.reduce(lcm);
   },
-  LN: (args: any[]) => Math.log(args[0]),
-  LOG: (args: any[]) => args.length > 1 ? Math.log(args[0]) / Math.log(args[1]) : Math.log10(args[0]),
-  LOG10: (args: any[]) => Math.log10(args[0]),
-  MOD: (args: any[]) => args[0] % args[1],
+  LN: (args: any[]) => Math.log(Number(args[0]) || 1),
+  LOG: (args: any[]) => {
+    const value = Number(args[0]) || 1;
+    const base = args.length > 1 ? Number(args[1]) || 10 : 10;
+    return base === 10 ? Math.log10(value) : Math.log(value) / Math.log(base);
+  },
+  LOG10: (args: any[]) => Math.log10(Number(args[0]) || 1),
+  MOD: (args: any[]) => (Number(args[0]) || 0) % (Number(args[1]) || 1),
   PI: () => Math.PI,
-  POWER: (args: any[]) => Math.pow(args[0], args[1]),
-  RADIANS: (args: any[]) => args[0] * (Math.PI / 180),
+  POWER: (args: any[]) => Math.pow(Number(args[0]) || 0, Number(args[1]) || 0),
+  RADIANS: (args: any[]) => (Number(args[0]) || 0) * (Math.PI / 180),
   RAND: () => Math.random(),
-  RANDBETWEEN: (args: any[]) => Math.floor(Math.random() * (args[1] - args[0] + 1)) + args[0],
-  ROUND: (args: any[]) => Math.round(args[0] * Math.pow(10, args[1] || 0)) / Math.pow(10, args[1] || 0),
-  ROUNDDOWN: (args: any[]) => Math.floor(args[0] * Math.pow(10, args[1] || 0)) / Math.pow(10, args[1] || 0),
-  ROUNDUP: (args: any[]) => Math.ceil(args[0] * Math.pow(10, args[1] || 0)) / Math.pow(10, args[1] || 0),
-  SIGN: (args: any[]) => args[0] > 0 ? 1 : args[0] < 0 ? -1 : 0,
-  SIN: (args: any[]) => Math.sin(args[0]),
-  SQRT: (args: any[]) => Math.sqrt(args[0]),
+  RANDBETWEEN: (args: any[]) => {
+    const min = Number(args[0]) || 0;
+    const max = Number(args[1]) || 0;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
+  ROUND: (args: any[]) => {
+    const value = Number(args[0]) || 0;
+    const digits = Number(args[1]) || 0;
+    return Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits);
+  },
+  ROUNDDOWN: (args: any[]) => {
+    const value = Number(args[0]) || 0;
+    const digits = Number(args[1]) || 0;
+    return Math.floor(value * Math.pow(10, digits)) / Math.pow(10, digits);
+  },
+  ROUNDUP: (args: any[]) => {
+    const value = Number(args[0]) || 0;
+    const digits = Number(args[1]) || 0;
+    return Math.ceil(value * Math.pow(10, digits)) / Math.pow(10, digits);
+  },
+  SIGN: (args: any[]) => {
+    const value = Number(args[0]) || 0;
+    return value > 0 ? 1 : value < 0 ? -1 : 0;
+  },
+  SIN: (args: any[]) => Math.sin(Number(args[0]) || 0),
+  SQRT: (args: any[]) => Math.sqrt(Number(args[0]) || 0),
   SUBTOTAL: (args: any[]) => {
-    const funcNum = args[0];
-    const values = args.slice(1).flat();
+    const funcNum = Number(args[0]) || 0;
+    const values = args.slice(1).flat().map(val => Number(val) || 0);
     switch (funcNum) {
-      case 1: case 101: return values.reduce((sum, val) => sum + parseFloat(val) || 0, 0) / values.length;
-      case 2: case 102: return values.filter(val => !isNaN(parseFloat(val))).length;
-      case 9: case 109: return values.reduce((sum, val) => sum + parseFloat(val) || 0, 0);
-      case 4: case 104: return Math.max(...values.map(val => parseFloat(val) || 0));
-      case 5: case 105: return Math.min(...values.map(val => parseFloat(val) || 0));
+      case 1: case 101: return values.reduce((sum, val) => sum + val, 0) / values.length;
+      case 2: case 102: return values.filter(val => !isNaN(val)).length;
+      case 9: case 109: return values.reduce((sum, val) => sum + val, 0);
+      case 4: case 104: return Math.max(...values);
+      case 5: case 105: return Math.min(...values);
       default: return 0;
     }
   },
-  TAN: (args: any[]) => Math.tan(args[0]),
-  TRUNC: (args: any[]) => Math.trunc(args[0]),
+  TAN: (args: any[]) => Math.tan(Number(args[0]) || 0),
+  TRUNC: (args: any[]) => Math.trunc(Number(args[0]) || 0),
 
   // Statistical Functions
   AVERAGE: (args: any[]) => {

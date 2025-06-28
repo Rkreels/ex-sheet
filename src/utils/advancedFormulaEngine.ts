@@ -1,14 +1,25 @@
-
 import { Cell } from '../types/sheet';
 import { formulaFunctions } from './formulaFunctions';
+import comprehensiveFormulas from './comprehensiveFormulas';
 
 export class AdvancedFormulaEngine {
   private cells: Record<string, Cell>;
   private dependencyGraph: Map<string, Set<string>> = new Map();
   private calculationOrder: string[] = [];
+  private allFunctions: Record<string, any>;
 
   constructor(cells: Record<string, Cell>) {
     this.cells = cells;
+    // Combine existing functions with comprehensive formulas
+    this.allFunctions = {
+      ...formulaFunctions,
+      ...Object.fromEntries(
+        Object.entries(comprehensiveFormulas).map(([name, func]) => [
+          name,
+          { execute: func, category: 'comprehensive', description: `${name} function` }
+        ])
+      )
+    };
     this.buildDependencyGraph();
   }
 
@@ -146,16 +157,16 @@ export class AdvancedFormulaEngine {
       return this.getCellNumericValue(cell).toString();
     });
 
-    // Handle function calls
+    // Handle function calls with comprehensive functions
     const functionRegex = /([A-Z]+)\(([^)]*)\)/g;
     processedFormula = processedFormula.replace(functionRegex, (match, funcName, args) => {
-      const func = formulaFunctions[funcName];
+      const func = this.allFunctions[funcName];
       if (!func) {
         throw new Error(`Unknown function: ${funcName}`);
       }
 
       const parsedArgs = this.parseArguments(args);
-      const result = func.execute(parsedArgs);
+      const result = func.execute ? func.execute(parsedArgs) : func(parsedArgs);
       return result.toString();
     });
 

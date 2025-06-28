@@ -1,13 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { Cell } from '../types/sheet';
 import CellContextMenu from './CellContextMenu';
 import CellDisplay from './cell/CellDisplay';
 import CellEditor from './cell/CellEditor';
-import CellInteractions from './cell/CellInteractions';
-import CellFormatPainter from './cell/CellFormatPainter';
 
 interface SpreadsheetCellProps {
   cellId: string;
@@ -56,6 +54,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   const [editValue, setEditValue] = useState('');
   const [displayValue, setDisplayValue] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const cellRef = useRef<HTMLDivElement>(null);
 
   // Calculate display value for formulas and update when cells change
   useEffect(() => {
@@ -79,10 +78,42 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
 
   // Update edit value when cell becomes active
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !editing) {
       setEditValue(cellData?.value || '');
     }
-  }, [isActive, cellData]);
+  }, [isActive, cellData, editing]);
+
+  // Handle keyboard events for starting edit mode
+  useEffect(() => {
+    if (isActive && cellRef.current) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Don't handle if already editing
+        if (editing) return;
+        
+        // Start editing on alphanumeric keys, =, or Delete/Backspace
+        if (e.key === 'F2' || 
+            e.key === 'Delete' || 
+            e.key === 'Backspace' ||
+            e.key === '=' ||
+            (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)) {
+          
+          e.preventDefault();
+          startEditing();
+          
+          if (e.key === 'Delete' || e.key === 'Backspace') {
+            setEditValue('');
+            onCellValueChange('');
+          } else if (e.key !== 'F2') {
+            setEditValue(e.key);
+            onCellValueChange(e.key);
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isActive, editing, onCellValueChange]);
 
   // Start editing function for cell
   const startEditing = () => {
@@ -105,46 +136,61 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   // Handle key down events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       setEditing(false);
       onCellKeyDown(e);
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       setEditing(false);
-      // Restore original value
+      setEditValue(cellData?.value || '');
       onCellValueChange(cellData?.value || '');
-    } else {
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      setEditing(false);
       onCellKeyDown(e);
     }
   };
 
-  // Handle drag over for visual feedback
+  // Handle drag events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
   };
 
-  // Handle drag leave
   const handleDragLeave = () => {
     setDragOver(false);
   };
 
-  // Handle drop
-  const handleDrop = () => {
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
     setDragOver(false);
     onCellDrop(cellId);
   };
 
-  // Handle format painter
-  const handleFormatPainted = () => {
-    // This will be handled by the global format painter handler
-    if (document.body.style.cursor === 'cell') {
-      document.body.style.cursor = 'default';
-    }
+  // Context menu handlers
+  const handleCellCopy = () => {
+    const copyEvent = new CustomEvent('excel-copy', { detail: { cellId } });
+    document.dispatchEvent(copyEvent);
+  };
+  
+  const handleCellCut = () => {
+    const cutEvent = new CustomEvent('excel-cut', { detail: { cellId } });
+    document.dispatchEvent(cutEvent);
+  };
+  
+  const handleCellPaste = () => {
+    const pasteEvent = new CustomEvent('excel-paste', { detail: { cellId } });
+    document.dispatchEvent(pasteEvent);
+  };
+  
+  const handleCellDelete = () => {
+    onCellValueChange('');
   };
 
   // Get column letter from index
   const getColumnLabel = (index: number) => {
     if (index < 26) {
-      return String.fromCharCode(65 + index); // A, B, C, ...
+      return String.fromCharCode(65 + index);
     } else {
       const firstChar = String.fromCharCode(65 + Math.floor(index / 26) - 1);
       const secondChar = String.fromCharCode(65 + (index % 26));
@@ -152,54 +198,46 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     }
   };
 
-  // Highlight specific columns to match Excel-like styling
-  const isColumnE = getColumnLabel(colIndex) === 'E';
-  const isRow3 = rowIndex + 1 === 3;
+  // Apply cell formatting
+  const getCellStyle = () => {
+    const format = cellData?.format;
+    const style: React.CSSProperties = {
+      width: `${width}px`,
+      minWidth: `${width}px`,
+      height: `${height}px`,
+      minHeight: `${height}px`,
+    };
 
-  // Context menu handlers
-  const handleCellCopy = () => {
-    const copyEvent = new Event('copy-cell') as any;
-    copyEvent.cellId = cellId;
-    document.dispatchEvent(copyEvent);
-  };
-  
-  const handleCellCut = () => {
-    const cutEvent = new Event('cut-cell') as any;
-    cutEvent.cellId = cellId;
-    document.dispatchEvent(cutEvent);
-  };
-  
-  const handleCellPaste = () => {
-    const pasteEvent = new Event('paste-cell') as any;
-    pasteEvent.cellId = cellId;
-    document.dispatchEvent(pasteEvent);
-  };
-  
-  const handleCellDelete = () => {
-    const deleteEvent = new Event('delete-cell') as any;
-    deleteEvent.cellId = cellId;
-    document.dispatchEvent(deleteEvent);
+    if (format) {
+      if (format.bold) style.fontWeight = 'bold';
+      if (format.italic) style.fontStyle = 'italic';
+      if (format.underline) style.textDecoration = 'underline';
+      if (format.fontSize) style.fontSize = format.fontSize;
+      if (format.fontFamily) style.fontFamily = format.fontFamily;
+      if (format.color) style.color = format.color;
+      if (format.backgroundColor) style.backgroundColor = format.backgroundColor;
+      if (format.alignment) style.textAlign = format.alignment;
+    }
+
+    return style;
   };
 
   const cellContent = (
     <div
+      ref={cellRef}
       className={cn(
-        "border-r border-b border-excel-gridBorder relative",
-        isActive && "border border-excel-blue z-10",
+        "border-r border-b border-excel-gridBorder relative cursor-cell flex items-center px-1",
+        isActive && "border-2 border-blue-500 z-10",
         isSelected && !isActive && "bg-blue-100",
         dragOver && "bg-green-50 border-green-500",
-        isColumnE && !isActive && !isSelected && !dragOver && "bg-amber-50",
-        isRow3 && !isActive && !isSelected && !dragOver && "bg-amber-50",
-        !isActive && !isSelected && !isColumnE && !isRow3 && !dragOver && "hover:bg-excel-hoverBg"
+        !isActive && !isSelected && !dragOver && "hover:bg-gray-50"
       )}
-      style={{ 
-        width: `${width}px`, 
-        minWidth: `${width}px`,
-        height: `${height}px`,
-        minHeight: `${height}px`,
-      }}
+      style={getCellStyle()}
       onClick={() => onCellClick(rowIndex, colIndex)}
-      onDoubleClick={() => onDoubleClick(rowIndex, colIndex)}
+      onDoubleClick={() => {
+        onDoubleClick(rowIndex, colIndex);
+        startEditing();
+      }}
       onMouseDown={(e) => onCellMouseDown(rowIndex, colIndex, e)}
       onMouseOver={() => onCellMouseOver(rowIndex, colIndex)}
       onDragOver={handleDragOver}
@@ -209,9 +247,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       onDragStart={() => onCellDragStart(cellId)} 
       onDragEnd={onCellDragEnd}
       data-cell-id={cellId}
+      tabIndex={isActive ? 0 : -1}
       aria-label={`Cell ${cellId}`}
-      data-voice-control="true"
-      data-voice-hover={`Cell ${cellId}`}
     >
       {isActive && editing ? (
         <CellEditor

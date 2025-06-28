@@ -4,7 +4,7 @@ import ExcelApp from '../components/ExcelApp';
 
 const Index = () => {
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden bg-white">
+    <div className="h-screen w-full bg-gray-50">
       <ExcelApp />
     </div>
   );

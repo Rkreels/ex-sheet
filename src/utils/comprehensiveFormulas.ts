@@ -149,7 +149,8 @@ export const comprehensiveFormulas = {
       .map(val => parseFloat(val))
       .filter(val => !isNaN(val))
       .sort((a, b) => b - a);
-    return values[k - 1] || '#NUM!';
+    const kNum = Number(k);
+    return values[kNum - 1] || '#NUM!';
   },
   MAX: (args: any[]) => {
     const values = args.flat().map(val => parseFloat(val)).filter(val => !isNaN(val));
@@ -166,10 +167,10 @@ export const comprehensiveFormulas = {
   },
   MODE: (args: any[]) => {
     const values = args.flat().map(val => parseFloat(val)).filter(val => !isNaN(val));
-    const frequency = {};
+    const frequency: Record<number, number> = {};
     values.forEach(val => frequency[val] = (frequency[val] || 0) + 1);
     let maxFreq = 0;
-    let mode = null;
+    let mode: number | null = null;
     for (const [val, freq] of Object.entries(frequency)) {
       if (freq > maxFreq) {
         maxFreq = freq;
@@ -179,7 +180,7 @@ export const comprehensiveFormulas = {
     return maxFreq > 1 ? mode : '#N/A';
   },
   NORMDIST: (args: any[]) => {
-    const [x, mean, stdDev, cumulative] = args;
+    const [x, mean, stdDev, cumulative] = args.map(arg => Number(arg) || 0);
     if (cumulative) {
       // Cumulative normal distribution (approximation)
       const z = (x - mean) / stdDev;
@@ -198,7 +199,8 @@ export const comprehensiveFormulas = {
       .filter(val => !isNaN(val))
       .sort((a, b) => a - b);
     
-    const index = k * (values.length - 1);
+    const kNum = Number(k);
+    const index = kNum * (values.length - 1);
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
     
@@ -212,7 +214,8 @@ export const comprehensiveFormulas = {
       .filter(val => !isNaN(val))
       .sort((a, b) => a - b);
     
-    switch (quart) {
+    const quartNum = Number(quart);
+    switch (quartNum) {
       case 0: return Math.min(...values);
       case 1: return comprehensiveFormulas.PERCENTILE([values, 0.25]);
       case 2: return comprehensiveFormulas.PERCENTILE([values, 0.5]);
@@ -227,7 +230,8 @@ export const comprehensiveFormulas = {
       .map(val => parseFloat(val))
       .filter(val => !isNaN(val));
     
-    if (order === 0) {
+    const numToFind = Number(number);
+    if (Number(order) === 0) {
       // Descending order
       values.sort((a, b) => b - a);
     } else {
@@ -235,7 +239,7 @@ export const comprehensiveFormulas = {
       values.sort((a, b) => a - b);
     }
     
-    return values.indexOf(number) + 1 || '#N/A';
+    return values.indexOf(numToFind) + 1 || '#N/A';
   },
   SMALL: (args: any[]) => {
     const [array, k] = args;
@@ -243,10 +247,11 @@ export const comprehensiveFormulas = {
       .map(val => parseFloat(val))
       .filter(val => !isNaN(val))
       .sort((a, b) => a - b);
-    return values[k - 1] || '#NUM!';
+    const kNum = Number(k);
+    return values[kNum - 1] || '#NUM!';
   },
   STANDARDIZE: (args: any[]) => {
-    const [x, mean, stdDev] = args;
+    const [x, mean, stdDev] = args.map(arg => Number(arg) || 0);
     return (x - mean) / stdDev;
   },
   STDEV: (args: any[]) => {
@@ -278,7 +283,7 @@ export const comprehensiveFormulas = {
 
   // Financial Functions
   FV: (args: any[]) => {
-    const [rate, nper, pmt, pv = 0, type = 0] = args;
+    const [rate, nper, pmt, pv = 0, type = 0] = args.map(arg => Number(arg) || 0);
     const pvFactor = Math.pow(1 + rate, nper);
     const pmtFactor = type === 0 ? 
       (Math.pow(1 + rate, nper) - 1) / rate : 
@@ -286,7 +291,7 @@ export const comprehensiveFormulas = {
     return -(pv * pvFactor + pmt * pmtFactor);
   },
   PV: (args: any[]) => {
-    const [rate, nper, pmt, fv = 0, type = 0] = args;
+    const [rate, nper, pmt, fv = 0, type = 0] = args.map(arg => Number(arg) || 0);
     const pvFactor = Math.pow(1 + rate, -nper);
     const pmtFactor = type === 0 ? 
       (1 - pvFactor) / rate : 
@@ -294,7 +299,7 @@ export const comprehensiveFormulas = {
     return -(fv * pvFactor + pmt * pmtFactor);
   },
   RATE: (args: any[]) => {
-    const [nper, pmt, pv, fv = 0, type = 0, guess = 0.1] = args;
+    const [nper, pmt, pv, fv = 0, type = 0, guess = 0.1] = args.map(arg => Number(arg) || 0);
     let rate = guess;
     const maxIterations = 100;
     const tolerance = 1e-6;
@@ -314,7 +319,7 @@ export const comprehensiveFormulas = {
     return '#NUM!';
   },
   NPER: (args: any[]) => {
-    const [rate, pmt, pv, fv = 0, type = 0] = args;
+    const [rate, pmt, pv, fv = 0, type = 0] = args.map(arg => Number(arg) || 0);
     if (rate === 0) return -(pv + fv) / pmt;
     
     const factor = type === 0 ? pmt / rate : pmt * (1 + rate) / rate;
@@ -323,7 +328,7 @@ export const comprehensiveFormulas = {
 
   // Date & Time Functions
   DATE: (args: any[]) => {
-    const [year, month, day] = args;
+    const [year, month, day] = args.map(arg => Number(arg) || 0);
     return new Date(year, month - 1, day).toLocaleDateString();
   },
   DATEVALUE: (args: any[]) => {
@@ -340,13 +345,13 @@ export const comprehensiveFormulas = {
   EDATE: (args: any[]) => {
     const [startDate, months] = args;
     const date = new Date(startDate);
-    date.setMonth(date.getMonth() + months);
+    date.setMonth(date.getMonth() + Number(months));
     return date.toLocaleDateString();
   },
   EOMONTH: (args: any[]) => {
     const [startDate, months] = args;
     const date = new Date(startDate);
-    date.setMonth(date.getMonth() + months + 1);
+    date.setMonth(date.getMonth() + Number(months) + 1);
     date.setDate(0);
     return date.toLocaleDateString();
   },
@@ -357,7 +362,7 @@ export const comprehensiveFormulas = {
     const [startDate, endDate, holidays = []] = args;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const holidaySet = new Set(holidays.map(h => new Date(h).toDateString()));
+    const holidaySet = new Set(holidays.map((h: any) => new Date(h).toDateString()));
     
     let count = 0;
     const current = new Date(start);
@@ -375,7 +380,7 @@ export const comprehensiveFormulas = {
   NOW: () => new Date().toLocaleString(),
   SECOND: (args: any[]) => new Date(args[0]).getSeconds(),
   TIME: (args: any[]) => {
-    const [hour, minute, second] = args;
+    const [hour, minute, second] = args.map(arg => Number(arg) || 0);
     const date = new Date();
     date.setHours(hour, minute, second);
     return date.toLocaleTimeString();
@@ -388,7 +393,8 @@ export const comprehensiveFormulas = {
   WEEKDAY: (args: any[]) => {
     const [date, returnType = 1] = args;
     const dayOfWeek = new Date(date).getDay();
-    switch (returnType) {
+    const returnTypeNum = Number(returnType);
+    switch (returnTypeNum) {
       case 1: return dayOfWeek === 0 ? 7 : dayOfWeek; // Sunday = 7
       case 2: return dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0
       case 3: return dayOfWeek; // Sunday = 0
@@ -405,12 +411,13 @@ export const comprehensiveFormulas = {
   WORKDAY: (args: any[]) => {
     const [startDate, days, holidays = []] = args;
     const start = new Date(startDate);
-    const holidaySet = new Set(holidays.map(h => new Date(h).toDateString()));
+    const holidaySet = new Set(holidays.map((h: any) => new Date(h).toDateString()));
     
     let current = new Date(start);
     let workdaysAdded = 0;
+    const targetDays = Number(days);
     
-    while (workdaysAdded < days) {
+    while (workdaysAdded < targetDays) {
       current.setDate(current.getDate() + 1);
       const dayOfWeek = current.getDay();
       if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(current.toDateString())) {
@@ -426,8 +433,9 @@ export const comprehensiveFormulas = {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    const basisNum = Number(basis);
     
-    switch (basis) {
+    switch (basisNum) {
       case 0: return days / 360; // 30/360
       case 1: return days / 365; // Actual/365
       case 2: return days / 360; // Actual/360
@@ -438,34 +446,34 @@ export const comprehensiveFormulas = {
   },
 
   // Text Functions
-  CHAR: (args: any[]) => String.fromCharCode(args[0]),
-  CLEAN: (args: any[]) => args[0].replace(/[\x00-\x1F\x7F]/g, ''),
-  CODE: (args: any[]) => args[0].charCodeAt(0),
-  CONCATENATE: (args: any[]) => args.join(''),
+  CHAR: (args: any[]) => String.fromCharCode(Number(args[0]) || 0),
+  CLEAN: (args: any[]) => String(args[0]).replace(/[\x00-\x1F\x7F]/g, ''),
+  CODE: (args: any[]) => String(args[0]).charCodeAt(0),
+  CONCATENATE: (args: any[]) => args.map(arg => String(arg)).join(''),
   DOLLAR: (args: any[]) => {
     const [number, decimals = 2] = args;
-    return '$' + parseFloat(number).toFixed(decimals);
+    return '$' + parseFloat(number).toFixed(Number(decimals));
   },
-  EXACT: (args: any[]) => args[0] === args[1],
+  EXACT: (args: any[]) => String(args[0]) === String(args[1]),
   FIND: (args: any[]) => {
     const [findText, withinText, startNum = 1] = args;
-    const index = withinText.indexOf(findText, startNum - 1);
+    const index = String(withinText).indexOf(String(findText), Number(startNum) - 1);
     return index === -1 ? '#VALUE!' : index + 1;
   },
   FIXED: (args: any[]) => {
     const [number, decimals = 2, noCommas = false] = args;
-    const fixed = parseFloat(number).toFixed(decimals);
+    const fixed = parseFloat(number).toFixed(Number(decimals));
     return noCommas ? fixed : fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   },
   LEFT: (args: any[]) => {
     const [text, numChars = 1] = args;
-    return String(text).substring(0, numChars);
+    return String(text).substring(0, Number(numChars));
   },
   LEN: (args: any[]) => String(args[0]).length,
   LOWER: (args: any[]) => String(args[0]).toLowerCase(),
   MID: (args: any[]) => {
     const [text, startNum, numChars] = args;
-    return String(text).substring(startNum - 1, startNum - 1 + numChars);
+    return String(text).substring(Number(startNum) - 1, Number(startNum) - 1 + Number(numChars));
   },
   PROPER: (args: any[]) => {
     return String(args[0]).replace(/\w\S*/g, txt => 
@@ -475,45 +483,52 @@ export const comprehensiveFormulas = {
   REPLACE: (args: any[]) => {
     const [oldText, startNum, numChars, newText] = args;
     const str = String(oldText);
-    return str.substring(0, startNum - 1) + newText + str.substring(startNum - 1 + numChars);
+    const start = Number(startNum);
+    const chars = Number(numChars);
+    return str.substring(0, start - 1) + newText + str.substring(start - 1 + chars);
   },
-  REPT: (args: any[]) => String(args[0]).repeat(args[1]),
+  REPT: (args: any[]) => String(args[0]).repeat(Number(args[1]) || 0),
   RIGHT: (args: any[]) => {
     const [text, numChars = 1] = args;
     const str = String(text);
-    return str.substring(str.length - numChars);
+    return str.substring(str.length - Number(numChars));
   },
   SEARCH: (args: any[]) => {
     const [findText, withinText, startNum = 1] = args;
-    const index = withinText.toLowerCase().indexOf(findText.toLowerCase(), startNum - 1);
+    const index = String(withinText).toLowerCase().indexOf(String(findText).toLowerCase(), Number(startNum) - 1);
     return index === -1 ? '#VALUE!' : index + 1;
   },
   SUBSTITUTE: (args: any[]) => {
     const [text, oldText, newText, instanceNum] = args;
     let result = String(text);
+    const oldStr = String(oldText);
+    const newStr = String(newText);
+    
     if (instanceNum) {
       let count = 0;
       let index = 0;
-      while ((index = result.indexOf(oldText, index)) !== -1) {
+      const targetInstance = Number(instanceNum);
+      while ((index = result.indexOf(oldStr, index)) !== -1) {
         count++;
-        if (count === instanceNum) {
-          result = result.substring(0, index) + newText + result.substring(index + oldText.length);
+        if (count === targetInstance) {
+          result = result.substring(0, index) + newStr + result.substring(index + oldStr.length);
           break;
         }
-        index += oldText.length;
+        index += oldStr.length;
       }
     } else {
-      result = result.replace(new RegExp(oldText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newText);
+      result = result.replace(new RegExp(oldStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), newStr);
     }
     return result;
   },
   T: (args: any[]) => typeof args[0] === 'string' ? args[0] : '',
   TEXT: (args: any[]) => {
     const [value, formatText] = args;
+    const format = String(formatText);
     // Simplified text formatting
-    if (formatText.includes('0.00')) {
+    if (format.includes('0.00')) {
       return parseFloat(value).toFixed(2);
-    } else if (formatText.includes('0')) {
+    } else if (format.includes('0')) {
       return Math.round(parseFloat(value)).toString();
     }
     return String(value);

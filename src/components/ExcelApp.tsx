@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sheet, CellSelection } from '../types/sheet';
 import { useSheetState } from '../hooks/useSheetState';
 import { useCellOperations } from '../hooks/useCellOperations';
-import ExcelRibbon from './ExcelRibbon';
+import Navigation from './Navigation';
+import RibbonContainer from './RibbonContainer';
 import SpreadsheetArea from './SpreadsheetArea';
 import SheetTabs from './SheetTabs';
 import { useAdvancedKeyboardNavigation } from '../hooks/useAdvancedKeyboardNavigation';
@@ -101,8 +102,11 @@ const ExcelApp: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-white">
+      {/* Navigation Bar */}
+      <Navigation onLoadDemoData={handleDemoData} />
+
       {/* Excel Ribbon */}
-      <ExcelRibbon
+      <RibbonContainer
         activeSheet={activeSheet}
         activeCell={activeCell}
         cellSelection={cellSelection}

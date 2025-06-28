@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Database, TrendingUp, DollarSign } from "lucide-react";
 import voiceAssistant from '../utils/voiceAssistant';
-import { generateDemoData } from '../utils/demoData';
+import { generateDemoData, generateFinancialModelDemo, generateMarketingAnalyticsDemo } from '../utils/demoData';
 
 interface NavigationProps {
   onLoadDemoData: (data: Record<string, any>) => void;
@@ -15,7 +15,19 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
   const handleDemoData = () => {
     const demoData = generateDemoData();
     onLoadDemoData(demoData);
-    voiceAssistant.speak("Demo data loaded. Try creating a chart or sorting data.");
+    voiceAssistant.speak("Comprehensive multi-departmental demo data loaded with advanced formulas and calculations.");
+  };
+
+  const handleFinancialDemo = () => {
+    const financialData = generateFinancialModelDemo();
+    onLoadDemoData(financialData);
+    voiceAssistant.speak("Financial modeling demo with DCF analysis loaded.");
+  };
+
+  const handleMarketingDemo = () => {
+    const marketingData = generateMarketingAnalyticsDemo();
+    onLoadDemoData(marketingData);
+    voiceAssistant.speak("Marketing analytics demo with campaign performance metrics loaded.");
   };
 
   const handleToggleMute = () => {
@@ -37,10 +49,33 @@ const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
         variant="outline"
         size="sm"
         onClick={handleDemoData}
-        className="text-xs"
-        data-voice-hover="Load demo data for practice"
+        className="text-xs mr-1"
+        data-voice-hover="Load comprehensive multi-departmental demo data"
       >
-        Load Demo Data
+        <Database className="h-3 w-3 mr-1" />
+        Multi-Dept Demo
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleFinancialDemo}
+        className="text-xs mr-1"
+        data-voice-hover="Load financial modeling demo"
+      >
+        <DollarSign className="h-3 w-3 mr-1" />
+        Financial Model
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleMarketingDemo}
+        className="text-xs mr-1"
+        data-voice-hover="Load marketing analytics demo"
+      >
+        <TrendingUp className="h-3 w-3 mr-1" />
+        Marketing Analytics
       </Button>
       
       <Button

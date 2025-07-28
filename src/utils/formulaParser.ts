@@ -1,4 +1,4 @@
-import formulaFunctions from './formulaFunctions';
+import { comprehensiveFormulas } from './comprehensiveFormulas';
 import { Cell } from '../types/sheet';
 import { parseCellRef, colLetterToIndex, expandRange } from './cellReference';
 
@@ -30,9 +30,12 @@ export const getCellValue = (cellRef: string, cells: Record<string, Cell>, formu
     const newVisited = new Set(visited);
     newVisited.add(cellRef);
     
-    // Import dynamically to avoid circular reference
-    const { evaluateFormula } = require('./formulaEvaluator');
-    return evaluateFormula(value.substring(1), cells, formula, newVisited);
+    // Avoid circular import by directly implementing basic evaluation
+    try {
+      return evaluateFormulaValue(value.substring(1), cells, formula, newVisited);
+    } catch (error) {
+      return '#ERROR!';
+    }
   }
   
   // Handle percentage values
@@ -86,9 +89,11 @@ export const processFunctionArgs = (args: string[], cells: Record<string, Cell>,
     
     // If arg is a nested formula
     if (arg.includes('(')) {
-      // Import dynamically to avoid circular reference
-      const { evaluateFormula } = require('./formulaEvaluator');
-      return evaluateFormula(arg, cells, parentFormula, visited);
+      try {
+        return evaluateFormulaValue(arg, cells, parentFormula, visited);
+      } catch (error) {
+        return '#ERROR!';
+      }
     }
     
     // If arg is a number
@@ -126,7 +131,7 @@ export const extractAndEvaluateFunctions = (formula: string, cells: Record<strin
     const processedArgs = processFunctionArgs(args, cells, parentFormula, visited);
     
     // Execute the function
-    const func = formulaFunctions[funcName];
+    const func = comprehensiveFormulas[funcName];
     if (!func) throw new Error(`Unknown function: ${funcName}`);
     
     let funcResult;
@@ -146,4 +151,39 @@ export const extractAndEvaluateFunctions = (formula: string, cells: Record<strin
   }
   
   return result;
+};
+
+// Basic formula evaluation to avoid circular imports
+const evaluateFormulaValue = (formula: string, cells: Record<string, Cell>, parentFormula = '', visited = new Set<string>()): any => {
+  try {
+    // First, handle function calls
+    let result = extractAndEvaluateFunctions(formula, cells, parentFormula, visited);
+    
+    // Process cell references
+    const cellRegex = /(?<![A-Z(])([A-Z]+[0-9]+)(?![A-Z0-9),])/g;
+    result = result.replace(cellRegex, (cellRef) => {
+      if (visited.has(cellRef)) return '#CIRCULAR!';
+      const newVisited = new Set(visited);
+      newVisited.add(cellRef);
+      return getCellValue(cellRef, cells, parentFormula, newVisited).toString();
+    });
+    
+    // Handle string concatenation with &
+    result = result.replace(/([^&])&([^&])/g, '$1+$2');
+    
+    // Handle percentage calculations
+    result = result.replace(/(\d+(?:\.\d+)?)%/g, (match, num) => {
+      return (parseFloat(num) / 100).toString();
+    });
+    
+    // Evaluate the expression safely
+    const evalResult = new Function(`"use strict"; return ${result}`)();
+    
+    if (typeof evalResult === 'number') {
+      return isNaN(evalResult) ? '#VALUE!' : evalResult;
+    }
+    return evalResult;
+  } catch (error) {
+    return '#ERROR!';
+  }
 };

@@ -1,241 +1,212 @@
+import formulaFunctions from './formulaFunctions';
+import { missingExcelFunctions } from './missingExcelFunctions';
 
-// Additional comprehensive formula functions for advanced Excel-like functionality
+// Comprehensive formula functions combining all Excel functionality
 export const comprehensiveFormulas = {
+  ...formulaFunctions,
+  ...missingExcelFunctions,
+  
   // Advanced Math Functions
-  RANDBETWEEN: (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min,
-  
-  ROUND: (number: number, digits: number = 0) => Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits),
-  
-  ROUNDUP: (number: number, digits: number = 0) => Math.ceil(number * Math.pow(10, digits)) / Math.pow(10, digits),
-  
-  ROUNDDOWN: (number: number, digits: number = 0) => Math.floor(number * Math.pow(10, digits)) / Math.pow(10, digits),
-  
-  ABS: (number: number) => Math.abs(number),
-  
-  SQRT: (number: number) => Math.sqrt(number),
-  
-  POWER: (number: number, power: number) => Math.pow(number, power),
-  
-  MOD: (number: number, divisor:number) => number % divisor,
-  
-  // Advanced Statistical Functions
-  MEDIAN: (args: number[]) => {
-    const sorted = args.sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  },
-  
-  MODE: (args: number[]) => {
-    const frequency = {};
-    let maxFreq = 0;
-    let mode = args[0];
-    
-    args.forEach(num => {
-      frequency[num] = (frequency[num] || 0) + 1;
-      if (frequency[num] > maxFreq) {
-        maxFreq = frequency[num];
-        mode = num;
-      }
-    });
-    
-    return mode;
-  },
-  
-  QUARTILE: (args: number[], quartile: number) => {
-    const sorted = args.sort((a, b) => a - b);
-    const n = sorted.length;
-    
-    switch(quartile) {
-      case 0: return sorted[0];
-      case 1: return sorted[Math.floor(n * 0.25)];
-      case 2: return sorted[Math.floor(n * 0.5)];
-      case 3: return sorted[Math.floor(n * 0.75)];
-      case 4: return sorted[n - 1];
-      default: return 0;
+  RANDBETWEEN: {
+    name: 'RANDBETWEEN',
+    description: 'Returns a random integer between two values',
+    execute: (args: any[]) => {
+      if (args.length !== 2) throw new Error('RANDBETWEEN requires exactly 2 arguments');
+      const [min, max] = args.map(Number);
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
   },
   
-  PERCENTILE: (args: number[], k: number) => {
-    const sorted = args.sort((a, b) => a - b);
-    const index = k * (sorted.length - 1);
-    const lower = Math.floor(index);
-    const upper = Math.ceil(index);
-    const weight = index % 1;
-    
-    if (upper >= sorted.length) return sorted[sorted.length - 1];
-    return sorted[lower] * (1 - weight) + sorted[upper] * weight;
-  },
-  
-  // Financial Functions Extended
-  FV: (rate: number, nper: number, pmt: number, pv: number = 0, type: number = 0) => {
-    if (rate === 0) return -(pv + pmt * nper);
-    
-    const factor = Math.pow(1 + rate, nper);
-    return -(pv * factor + pmt * (factor - 1) / rate * (1 + rate * type));
-  },
-  
-  PV: (rate: number, nper: number, pmt: number, fv: number = 0, type: number = 0) => {
-    if (rate === 0) return -(fv + pmt * nper);
-    
-    const factor = Math.pow(1 + rate, nper);
-    return -(fv + pmt * (factor - 1) / rate * (1 + rate * type)) / factor;
-  },
-  
-  NPER: (rate: number, pmt: number, pv: number, fv: number = 0, type: number = 0) => {
-    if (rate === 0) return -(fv + pv) / pmt;
-    
-    const num = pmt * (1 + rate * type) - fv * rate;
-    const den = pv * rate + pmt * (1 + rate * type);
-    
-    return Math.log(num / den) / Math.log(1 + rate);
-  },
-  
-  RATE: (nper: number, pmt: number, pv: number, fv: number = 0, type: number = 0, guess: number = 0.1) => {
-    // Newton-Raphson method for finding rate
-    let rate = guess;
-    for (let i = 0; i < 100; i++) {
-      const f = pv + pmt * (1 + rate * type) * ((Math.pow(1 + rate, nper) - 1) / rate) + fv * Math.pow(1 + rate, -nper);
-      const df = pmt * (1 + rate * type) * (nper * Math.pow(1 + rate, nper - 1) / rate - (Math.pow(1 + rate, nper) - 1) / (rate * rate)) - fv * nper * Math.pow(1 + rate, -nper - 1);
-      
-      const newRate = rate - f / df;
-      if (Math.abs(newRate - rate) < 1e-10) return newRate;
-      rate = newRate;
+  ROUND: {
+    name: 'ROUND',
+    description: 'Rounds a number to a specified number of digits',
+    execute: (args: any[]) => {
+      if (args.length < 1 || args.length > 2) throw new Error('ROUND requires 1 or 2 arguments');
+      const number = Number(args[0]);
+      const digits = args.length > 1 ? Number(args[1]) : 0;
+      return Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
     }
-    return rate;
+  },
+  
+  ROUNDUP: {
+    name: 'ROUNDUP',
+    description: 'Rounds a number up to a specified number of digits',
+    execute: (args: any[]) => {
+      if (args.length < 1 || args.length > 2) throw new Error('ROUNDUP requires 1 or 2 arguments');
+      const number = Number(args[0]);
+      const digits = args.length > 1 ? Number(args[1]) : 0;
+      return Math.ceil(number * Math.pow(10, digits)) / Math.pow(10, digits);
+    }
+  },
+  
+  ROUNDDOWN: {
+    name: 'ROUNDDOWN',
+    description: 'Rounds a number down to a specified number of digits',
+    execute: (args: any[]) => {
+      if (args.length < 1 || args.length > 2) throw new Error('ROUNDDOWN requires 1 or 2 arguments');
+      const number = Number(args[0]);
+      const digits = args.length > 1 ? Number(args[1]) : 0;
+      return Math.floor(number * Math.pow(10, digits)) / Math.pow(10, digits);
+    }
+  },
+  
+  MOD: {
+    name: 'MOD',
+    description: 'Returns the remainder after division',
+    execute: (args: any[]) => {
+      if (args.length !== 2) throw new Error('MOD requires exactly 2 arguments');
+      const [number, divisor] = args.map(Number);
+      if (divisor === 0) return '#DIV/0!';
+      return number % divisor;
+    }
+  },
+  
+  // Advanced Text Functions  
+  FIND: {
+    name: 'FIND',
+    description: 'Finds one text string within another text string',
+    execute: (args: any[]) => {
+      if (args.length < 2 || args.length > 3) throw new Error('FIND requires 2 or 3 arguments');
+      const [findText, withinText, startNum = 1] = args.map(String);
+      const index = withinText.indexOf(findText, Number(startNum) - 1);
+      return index === -1 ? '#VALUE!' : index + 1;
+    }
+  },
+  
+  SEARCH: {
+    name: 'SEARCH',
+    description: 'Finds one text string within another text string (case-insensitive)',
+    execute: (args: any[]) => {
+      if (args.length < 2 || args.length > 3) throw new Error('SEARCH requires 2 or 3 arguments');
+      const [findText, withinText, startNum = 1] = args;
+      const regex = new RegExp(String(findText), 'i');
+      const match = String(withinText).substring(Number(startNum) - 1).match(regex);
+      return match ? match.index + Number(startNum) : '#VALUE!';
+    }
   },
   
   // Date Functions Extended
-  DATEDIF: (startDate: Date, endDate: Date, unit: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    switch(unit.toUpperCase()) {
-      case 'Y': return end.getFullYear() - start.getFullYear();
-      case 'M': return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-      case 'D': return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-      default: return 0;
-    }
-  },
-  
-  WEEKDAY: (date: Date, type: number = 1) => {
-    const day = new Date(date).getDay();
-    switch(type) {
-      case 1: return day === 0 ? 7 : day; // Sunday = 7
-      case 2: return day === 0 ? 6 : day - 1; // Monday = 0
-      case 3: return day; // Sunday = 0
-      default: return day;
-    }
-  },
-  
-  WORKDAY: (startDate: Date, days: number, holidays: Date[] = []) => {
-    const result = new Date(startDate);
-    let addedDays = 0;
-    
-    while (addedDays < Math.abs(days)) {
-      result.setDate(result.getDate() + (days > 0 ? 1 : -1));
+  DATEDIF: {
+    name: 'DATEDIF',
+    description: 'Calculates the difference between two dates',
+    execute: (args: any[]) => {
+      if (args.length !== 3) throw new Error('DATEDIF requires exactly 3 arguments');
+      const [startDate, endDate, unit] = args;
+      const start = new Date(startDate);
+      const end = new Date(endDate);
       
-      // Skip weekends and holidays
-      if (result.getDay() !== 0 && result.getDay() !== 6 && 
-          !holidays.some(holiday => holiday.toDateString() === result.toDateString())) {
-        addedDays++;
+      switch(String(unit).toUpperCase()) {
+        case 'Y': return end.getFullYear() - start.getFullYear();
+        case 'M': return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        case 'D': return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        default: return '#VALUE!';
       }
     }
-    
-    return result;
   },
   
-  // Text Functions Extended
-  PROPER: (text: string) => text.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
-  
-  TRIM: (text: string) => text.trim().replace(/\s+/g, ' '),
-  
-  SUBSTITUTE: (text: string, oldText: string, newText: string, instanceNum?: number) => {
-    if (instanceNum) {
-      let count = 0;
-      return text.replace(new RegExp(oldText, 'g'), match => {
-        count++;
-        return count === instanceNum ? newText : match;
-      });
+  WEEKDAY: {
+    name: 'WEEKDAY',
+    description: 'Returns the day of the week',
+    execute: (args: any[]) => {
+      if (args.length < 1 || args.length > 2) throw new Error('WEEKDAY requires 1 or 2 arguments');
+      const [date, type = 1] = args;
+      const day = new Date(date).getDay();
+      const typeNum = Number(type);
+      
+      switch(typeNum) {
+        case 1: return day === 0 ? 7 : day; // Sunday = 7
+        case 2: return day === 0 ? 6 : day - 1; // Monday = 0
+        case 3: return day; // Sunday = 0
+        default: return day;
+      }
     }
-    return text.replace(new RegExp(oldText, 'g'), newText);
-  },
-  
-  FIND: (findText: string, withinText: string, startNum: number = 1) => {
-    const index = withinText.indexOf(findText, startNum - 1);
-    return index === -1 ? '#VALUE!' : index + 1;
-  },
-  
-  SEARCH: (findText: string, withinText: string, startNum: number = 1) => {
-    const regex = new RegExp(findText, 'i');
-    const match = withinText.substring(startNum - 1).match(regex);
-    return match ? match.index + startNum : '#VALUE!';
-  },
-  
-  // Logical Functions Extended
-  SWITCH: (expression: any, ...cases: any[]) => {
-    for (let i = 0; i < cases.length - 1; i += 2) {
-      if (expression === cases[i]) return cases[i + 1];
-    }
-    return cases.length % 2 === 1 ? cases[cases.length - 1] : '#N/A';
-  },
-  
-  IFS: (...conditions: any[]) => {
-    for (let i = 0; i < conditions.length - 1; i += 2) {
-      if (conditions[i]) return conditions[i + 1];
-    }
-    return '#N/A';
   },
   
   // Array Functions
-  TRANSPOSE: (array: any[][]) => {
-    return array[0].map((_, colIndex) => array.map(row => row[colIndex]));
+  SUMIF: {
+    name: 'SUMIF',
+    description: 'Sums cells that meet a criteria',
+    execute: (args: any[]) => {
+      if (args.length < 2 || args.length > 3) throw new Error('SUMIF requires 2 or 3 arguments');
+      const [range, criteria, sumRange] = args;
+      const rangeArray = Array.isArray(range) ? range.flat() : [range];
+      const sumArray = sumRange ? (Array.isArray(sumRange) ? sumRange.flat() : [sumRange]) : rangeArray;
+      
+      return rangeArray.reduce((total, value, index) => {
+        let match = false;
+        const criteriaStr = String(criteria);
+        
+        if (criteriaStr.startsWith('>')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          match = Number(value) > threshold;
+        } else if (criteriaStr.startsWith('<')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          match = Number(value) < threshold;
+        } else {
+          match = value == criteria;
+        }
+        
+        return match ? total + Number(sumArray[index] || 0) : total;
+      }, 0);
+    }
   },
   
-  SUMIF: (range: any[], criteria: any, sumRange?: any[]) => {
-    const sum = sumRange || range;
-    return range.reduce((total, value, index) => {
-      if (typeof criteria === 'string' && criteria.includes('>')) {
-        const threshold = parseFloat(criteria.substring(1));
-        return value > threshold ? total + (sum[index] || 0) : total;
-      } else if (typeof criteria === 'string' && criteria.includes('<')) {
-        const threshold = parseFloat(criteria.substring(1));
-        return value < threshold ? total + (sum[index] || 0) : total;
-      } else if (value === criteria) {
-        return total + (sum[index] || 0);
-      }
-      return total;
-    }, 0);
+  COUNTIF: {
+    name: 'COUNTIF',
+    description: 'Counts cells that meet a criteria',
+    execute: (args: any[]) => {
+      if (args.length !== 2) throw new Error('COUNTIF requires exactly 2 arguments');
+      const [range, criteria] = args;
+      const rangeArray = Array.isArray(range) ? range.flat() : [range];
+      
+      return rangeArray.filter(value => {
+        const criteriaStr = String(criteria);
+        
+        if (criteriaStr.startsWith('>')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          return Number(value) > threshold;
+        } else if (criteriaStr.startsWith('<')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          return Number(value) < threshold;
+        }
+        return value == criteria;
+      }).length;
+    }
   },
   
-  COUNTIF: (range: any[], criteria: any) => {
-    return range.filter(value => {
-      if (typeof criteria === 'string' && criteria.includes('>')) {
-        const threshold = parseFloat(criteria.substring(1));
-        return value > threshold;
-      } else if (typeof criteria === 'string' && criteria.includes('<')) {
-        const threshold = parseFloat(criteria.substring(1));
-        return value < threshold;
-      }
-      return value === criteria;
-    }).length;
-  },
-  
-  AVERAGEIF: (range: any[], criteria: any, averageRange?: any[]) => {
-    const avgRange = averageRange || range;
-    const matchingValues = range.reduce((acc, value, index) => {
-      if (typeof criteria === 'string' && criteria.includes('>')) {
-        const threshold = parseFloat(criteria.substring(1));
-        if (value > threshold) acc.push(avgRange[index]);
-      } else if (typeof criteria === 'string' && criteria.includes('<')) {
-        const threshold = parseFloat(criteria.substring(1));
-        if (value < threshold) acc.push(avgRange[index]);
-      } else if (value === criteria) {
-        acc.push(avgRange[index]);
-      }
-      return acc;
-    }, []);
-    
-    return matchingValues.length > 0 ? matchingValues.reduce((sum, val) => sum + val, 0) / matchingValues.length : 0;
+  AVERAGEIF: {
+    name: 'AVERAGEIF',
+    description: 'Averages cells that meet a criteria',
+    execute: (args: any[]) => {
+      if (args.length < 2 || args.length > 3) throw new Error('AVERAGEIF requires 2 or 3 arguments');
+      const [range, criteria, averageRange] = args;
+      const rangeArray = Array.isArray(range) ? range.flat() : [range];
+      const avgArray = averageRange ? (Array.isArray(averageRange) ? averageRange.flat() : [averageRange]) : rangeArray;
+      
+      const matchingValues: number[] = [];
+      
+      rangeArray.forEach((value, index) => {
+        let match = false;
+        const criteriaStr = String(criteria);
+        
+        if (criteriaStr.startsWith('>')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          match = Number(value) > threshold;
+        } else if (criteriaStr.startsWith('<')) {
+          const threshold = parseFloat(criteriaStr.substring(1));
+          match = Number(value) < threshold;
+        } else {
+          match = value == criteria;
+        }
+        
+        if (match && avgArray[index] !== undefined) {
+          matchingValues.push(Number(avgArray[index]));
+        }
+      });
+      
+      return matchingValues.length > 0 ? 
+        matchingValues.reduce((sum, val) => sum + val, 0) / matchingValues.length : 0;
+    }
   }
 };
 

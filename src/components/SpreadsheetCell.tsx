@@ -6,6 +6,7 @@ import { Cell } from '../types/sheet';
 import CellContextMenu from './CellContextMenu';
 import CellDisplay from './cell/CellDisplay';
 import CellEditor from './cell/CellEditor';
+import CellFormatting from './cell/CellFormatting';
 
 interface SpreadsheetCellProps {
   cellId: string;
@@ -258,7 +259,12 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
           onKeyDown={handleKeyDown}
         />
       ) : (
-        <CellDisplay cellData={cellData} displayValue={displayValue} />
+        <CellFormatting 
+          cellData={cellData} 
+          displayValue={displayValue}
+          width={width}
+          height={height}
+        />
       )}
     </div>
   );

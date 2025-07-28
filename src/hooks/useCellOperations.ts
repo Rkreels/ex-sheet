@@ -10,6 +10,8 @@ import { useAutoSum } from './useAutoSum';
 import { useFillOperations } from './useFillOperations';
 import { useSearchOperations } from './useSearchOperations';
 import { useFormatCleaner } from './useFormatCleaner';
+import { useExcelFeatures } from './useExcelFeatures';
+import { useAdvancedCalculations } from './useAdvancedCalculations';
 import { toast } from 'sonner';
 import { createAdvancedFormulaEngine } from '../utils/advancedFormulaEngine';
 
@@ -69,6 +71,8 @@ export const useCellOperations = (
   const fillOps = useFillOperations(activeSheet, activeSheetId, activeCell, cellSelection, setSheets);
   const searchOps = useSearchOperations(activeSheet, activeSheetId, setSheets);
   const formatCleaner = useFormatCleaner(activeSheet, activeSheetId, activeCell, cellSelection, setSheets);
+  const excelFeatures = useExcelFeatures(activeSheet, activeSheetId, activeCell, setSheets, cellSelection);
+  const advancedCalc = useAdvancedCalculations(activeSheet, activeSheetId, setSheets);
 
   // Enhanced formula evaluation effect
   useEffect(() => {
@@ -153,6 +157,25 @@ export const useCellOperations = (
     handleRowDragDrop: gridOps.handleRowDragDrop,
     
     // Cell value update
-    updateCellValue: clipboardOps.updateCellValue
+    updateCellValue: clipboardOps.updateCellValue,
+    
+    // Advanced Excel features
+    handleAutoFill: excelFeatures.handleAutoFill,
+    handleFreezePanes: excelFeatures.handleFreezePanes,
+    handleUnfreezePanes: excelFeatures.handleUnfreezePanes,
+    handleHideRows: excelFeatures.handleHideRows,
+    handleShowRows: excelFeatures.handleShowRows,
+    handleHideColumns: excelFeatures.handleHideColumns,
+    handleShowColumns: excelFeatures.handleShowColumns,
+    handleAutoFitColumns: excelFeatures.handleAutoFitColumns,
+    handleAutoFitRows: excelFeatures.handleAutoFitRows,
+    handleMergeCells: excelFeatures.handleMergeCells,
+    handleUnmergeCells: excelFeatures.handleUnmergeCells,
+    
+    // Advanced calculations
+    recalculateSheet: advancedCalc.recalculateSheet,
+    calculateRangeStatistics: advancedCalc.calculateRangeStatistics,
+    goalSeek: advancedCalc.goalSeek,
+    solver: advancedCalc.solver
   };
 };

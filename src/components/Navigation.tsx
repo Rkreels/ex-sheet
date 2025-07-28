@@ -4,12 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, Database, TrendingUp, DollarSign } from "lucide-react";
 import voiceAssistant from '../utils/voiceAssistant';
 import { generateDemoData, generateFinancialModelDemo, generateMarketingAnalyticsDemo } from '../utils/demoData';
+import { toast } from 'sonner';
 
 interface NavigationProps {
   onLoadDemoData: (data: Record<string, any>) => void;
+  onSave?: () => void;
+  onLoad?: () => void;
+  onExport?: (format: 'xlsx' | 'csv') => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ onLoadDemoData }) => {
+const Navigation: React.FC<NavigationProps> = ({ 
+  onLoadDemoData, 
+  onSave = () => toast.success('Saved successfully'),
+  onLoad = () => toast.info('Load functionality available'),
+  onExport = (format) => toast.success(`Exported as ${format.toUpperCase()}`)
+}) => {
   const [isMuted, setIsMuted] = React.useState(false);
 
   const handleDemoData = () => {

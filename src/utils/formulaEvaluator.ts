@@ -38,8 +38,14 @@ export const evaluateFormula = (formula: string, cells: Record<string, Cell>, pa
         return (parseFloat(num) / 100).toString();
       });
       
+      // Fix multiplication, division, and other operators
+      result = result.replace(/\*/g, '*');
+      result = result.replace(/\//g, '/');
+      result = result.replace(/\+/g, '+');
+      result = result.replace(/-/g, '-');
+      
       // Evaluate the expression safely
-      const evalResult = new Function(`"use strict"; return ${result}`)();
+      const evalResult = new Function(`"use strict"; return (${result})`)();
       
       // Return proper values
       if (typeof evalResult === 'number') {

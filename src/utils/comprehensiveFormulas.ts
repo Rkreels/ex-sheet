@@ -207,6 +207,133 @@ export const comprehensiveFormulas = {
       return matchingValues.length > 0 ? 
         matchingValues.reduce((sum, val) => sum + val, 0) / matchingValues.length : 0;
     }
+  },
+
+  // Essential Missing Excel Functions
+  COUNTA: {
+    name: 'COUNTA',
+    description: 'Counts the number of non-empty cells',
+    execute: (args: any[]) => {
+      const flatArgs = args.flat(Infinity);
+      return flatArgs.filter(val => val !== '' && val !== null && val !== undefined).length;
+    }
+  },
+
+  SUMPRODUCT: {
+    name: 'SUMPRODUCT',
+    description: 'Multiplies corresponding components and returns the sum',
+    execute: (args: any[]) => {
+      if (args.length < 2) throw new Error('SUMPRODUCT requires at least 2 arguments');
+      
+      const arrays = args.map(arg => Array.isArray(arg) ? arg.flat() : [arg]);
+      const minLength = Math.min(...arrays.map(arr => arr.length));
+      
+      let sum = 0;
+      for (let i = 0; i < minLength; i++) {
+        let product = 1;
+        for (let j = 0; j < arrays.length; j++) {
+          const val = Number(arrays[j][i] || 0);
+          product *= isNaN(val) ? 0 : val;
+        }
+        sum += product;
+      }
+      return sum;
+    }
+  },
+
+  // Advanced Math Functions
+  ABS: {
+    name: 'ABS',
+    description: 'Returns the absolute value of a number',
+    execute: (args: any[]) => {
+      if (args.length !== 1) throw new Error('ABS requires exactly 1 argument');
+      return Math.abs(Number(args[0]));
+    }
+  },
+
+  POWER: {
+    name: 'POWER',
+    description: 'Returns a number raised to a power',
+    execute: (args: any[]) => {
+      if (args.length !== 2) throw new Error('POWER requires exactly 2 arguments');
+      return Math.pow(Number(args[0]), Number(args[1]));
+    }
+  },
+
+  SQRT: {
+    name: 'SQRT',
+    description: 'Returns the square root of a number',
+    execute: (args: any[]) => {
+      if (args.length !== 1) throw new Error('SQRT requires exactly 1 argument');
+      const num = Number(args[0]);
+      return num < 0 ? '#NUM!' : Math.sqrt(num);
+    }
+  },
+
+  // Trigonometric Functions
+  SIN: {
+    name: 'SIN',
+    description: 'Returns the sine of an angle',
+    execute: (args: any[]) => Math.sin(Number(args[0]))
+  },
+
+  COS: {
+    name: 'COS',
+    description: 'Returns the cosine of an angle',
+    execute: (args: any[]) => Math.cos(Number(args[0]))
+  },
+
+  TAN: {
+    name: 'TAN',
+    description: 'Returns the tangent of an angle',
+    execute: (args: any[]) => Math.tan(Number(args[0]))
+  },
+
+  // Advanced Text Functions
+  TRIM: {
+    name: 'TRIM',
+    description: 'Removes extra spaces from text',
+    execute: (args: any[]) => String(args[0]).trim().replace(/\s+/g, ' ')
+  },
+
+  SUBSTITUTE: {
+    name: 'SUBSTITUTE',
+    description: 'Substitutes new text for old text',
+    execute: (args: any[]) => {
+      const [text, oldText, newText] = args;
+      return String(text).replace(new RegExp(String(oldText).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), String(newText));
+    }
+  },
+
+  // Statistical Functions
+  MEDIAN: {
+    name: 'MEDIAN',
+    description: 'Returns the median of a set of numbers',
+    execute: (args: any[]) => {
+      const numbers = args.flat(Infinity).filter(val => !isNaN(parseFloat(val))).map(val => parseFloat(val)).sort((a, b) => a - b);
+      if (numbers.length === 0) return 0;
+      const mid = Math.floor(numbers.length / 2);
+      return numbers.length % 2 !== 0 ? numbers[mid] : (numbers[mid - 1] + numbers[mid]) / 2;
+    }
+  },
+
+  // Information Functions
+  ISBLANK: {
+    name: 'ISBLANK',
+    description: 'Checks whether a value is blank',
+    execute: (args: any[]) => args[0] === '' || args[0] === null || args[0] === undefined
+  },
+
+  ISNUMBER: {
+    name: 'ISNUMBER',
+    description: 'Checks whether a value is a number',
+    execute: (args: any[]) => !isNaN(parseFloat(args[0])) && isFinite(args[0])
+  },
+
+  ISTEXT: {
+    name: 'ISTEXT',
+    description: 'Checks whether a value is text',
+    execute: (args: any[]) => typeof args[0] === 'string' && isNaN(parseFloat(args[0]))
   }
 };
 

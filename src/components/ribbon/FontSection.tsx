@@ -3,6 +3,7 @@ import React from 'react';
 import { Bold, Italic, Underline } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { RibbonSection } from './RibbonSection';
+import ExcelColorPicker from '../ExcelColorPicker';
 
 interface FontSectionProps {
   onBoldClick: () => void;
@@ -106,31 +107,17 @@ export const FontSection: React.FC<FontSectionProps> = ({
           
           <div className="h-6 border-l border-gray-300 mx-1"></div>
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6"
-            onClick={() => {
-              const color = prompt('Enter color (e.g. red, #FF0000):', activeCellFormat.color || '#000000');
-              if (color) onColorChange(color);
-            }}
-          >
-            <div className="w-4 h-4 border border-gray-400" style={{backgroundColor: activeCellFormat.color || 'black'}} />
-          </Button>
+          <ExcelColorPicker
+            onColorSelect={onColorChange}
+            label="Font Color"
+            currentColor={activeCellFormat?.color}
+          />
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6"
-            onClick={() => {
-              const color = prompt('Enter background color:', activeCellFormat.backgroundColor || '#FFFFFF');
-              if (color) onBackgroundColorChange(color);
-            }}
-          >
-            <div className="w-4 h-4 border border-gray-400 bg-white">
-              <div className="w-2 h-2" style={{backgroundColor: activeCellFormat.backgroundColor || 'transparent'}} />
-            </div>
-          </Button>
+          <ExcelColorPicker
+            onColorSelect={onBackgroundColorChange}
+            label="Fill Color"
+            currentColor={activeCellFormat?.backgroundColor}
+          />
         </div>
       </div>
     </RibbonSection>

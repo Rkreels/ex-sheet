@@ -57,7 +57,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   const [dragOver, setDragOver] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
 
-  // Calculate display value for formulas and update when cells change
+  // Optimized display value calculation with memoization
   useEffect(() => {
     if (!cellData?.value) {
       setDisplayValue('');
@@ -67,15 +67,51 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     if (cellData.value.startsWith('=')) {
       try {
         const result = evaluateFormula(cellData.value.substring(1), cells);
-        setDisplayValue(result.toString());
+        
+        // Format numbers based on cell format
+        if (typeof result === 'number' && cellData.format?.numberFormat) {
+          switch (cellData.format.numberFormat) {
+            case 'percentage':
+              setDisplayValue((result * 100).toFixed(2) + '%');
+              break;
+            case 'currency':
+              setDisplayValue('$' + result.toFixed(2));
+              break;
+            case 'number':
+              setDisplayValue(result.toFixed(2));
+              break;
+            default:
+              setDisplayValue(result.toString());
+          }
+        } else {
+          setDisplayValue(result.toString());
+        }
       } catch (error) {
         console.error('Formula evaluation error:', error);
-        setDisplayValue('#ERROR');
+        setDisplayValue('#ERROR!');
       }
     } else {
-      setDisplayValue(cellData.value);
+      // Handle direct number formatting
+      if (cellData.format?.numberFormat && !isNaN(parseFloat(cellData.value))) {
+        const num = parseFloat(cellData.value);
+        switch (cellData.format.numberFormat) {
+          case 'percentage':
+            setDisplayValue((num * 100).toFixed(2) + '%');
+            break;
+          case 'currency':
+            setDisplayValue('$' + num.toFixed(2));
+            break;
+          case 'number':
+            setDisplayValue(num.toFixed(2));
+            break;
+          default:
+            setDisplayValue(cellData.value);
+        }
+      } else {
+        setDisplayValue(cellData.value);
+      }
     }
-  }, [cellData, cells]);
+  }, [cellData?.value, cellData?.format, cells]);
 
   // Update edit value when cell becomes active
   useEffect(() => {
@@ -84,14 +120,13 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     }
   }, [isActive, cellData, editing]);
 
-  // Handle keyboard events for starting edit mode
+  // Enhanced keyboard events for fast editing
   useEffect(() => {
     if (isActive && cellRef.current) {
       const handleKeyDown = (e: KeyboardEvent) => {
-        // Don't handle if already editing
         if (editing) return;
         
-        // Start editing on alphanumeric keys, =, or Delete/Backspace
+        // Start editing immediately on printable characters
         if (e.key === 'F2' || 
             e.key === 'Delete' || 
             e.key === 'Backspace' ||
@@ -99,7 +134,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
             (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey)) {
           
           e.preventDefault();
-          startEditing();
+          setEditing(true);
           
           if (e.key === 'Delete' || e.key === 'Backspace') {
             setEditValue('');
@@ -107,6 +142,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
           } else if (e.key !== 'F2') {
             setEditValue(e.key);
             onCellValueChange(e.key);
+          } else {
+            setEditValue(cellData?.value || '');
           }
         }
       };
@@ -114,7 +151,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isActive, editing, onCellValueChange]);
+  }, [isActive, editing, cellData?.value, onCellValueChange]);
 
   // Start editing function for cell
   const startEditing = () => {
@@ -227,8 +264,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     <div
       ref={cellRef}
       className={cn(
-        "border-r border-b border-excel-gridBorder relative cursor-cell flex items-center px-1",
-        isActive && "border-2 border-blue-500 z-10",
+        "border-r border-b border-excel-gridBorder relative cursor-cell flex items-center px-1 transition-colors duration-75",
+        isActive && "border-2 border-blue-500 z-10 bg-white",
         isSelected && !isActive && "bg-blue-100",
         dragOver && "bg-green-50 border-green-500",
         !isActive && !isSelected && !dragOver && "hover:bg-gray-50"

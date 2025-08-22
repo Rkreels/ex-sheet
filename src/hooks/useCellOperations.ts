@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Sheet, Cell, NumberFormat } from '../types/sheet';
 import { evaluateFormula } from '../utils/formulaEvaluator';
 import { useFormatting } from './useFormatting';
@@ -12,6 +12,7 @@ import { useSearchOperations } from './useSearchOperations';
 import { useFormatCleaner } from './useFormatCleaner';
 import { useExcelFeatures } from './useExcelFeatures';
 import { useAdvancedCalculations } from './useAdvancedCalculations';
+import { useAdvancedCellSelection } from './useAdvancedCellSelection';
 import { toast } from 'sonner';
 import { createAdvancedFormulaEngine } from '../utils/advancedFormulaEngine';
 
@@ -73,6 +74,7 @@ export const useCellOperations = (
   const formatCleaner = useFormatCleaner(activeSheet, activeSheetId, activeCell, cellSelection, setSheets);
   const excelFeatures = useExcelFeatures(activeSheet, activeSheetId, activeCell, setSheets, cellSelection);
   const advancedCalc = useAdvancedCalculations(activeSheet, activeSheetId, setSheets);
+  const advancedSelection = useAdvancedCellSelection(setSheets, activeSheetId);
 
   // Enhanced formula evaluation effect
   useEffect(() => {
@@ -176,6 +178,16 @@ export const useCellOperations = (
     recalculateSheet: advancedCalc.recalculateSheet,
     calculateRangeStatistics: advancedCalc.calculateRangeStatistics,
     goalSeek: advancedCalc.goalSeek,
-    solver: advancedCalc.solver
+    solver: advancedCalc.solver,
+    
+    // Multi-cell operations
+    handleMultiCellOperation: handleMultiCellOperation,
+    
+    // Advanced selection operations
+    applyColorToSelection: advancedSelection.applyColorToSelection,
+    applyBackgroundToSelection: advancedSelection.applyBackgroundToSelection,
+    mergeCells: advancedSelection.mergeCells,
+    setMultiSelection: advancedSelection.setMultiSelection,
+    multiSelection: advancedSelection.multiSelection
   };
 };

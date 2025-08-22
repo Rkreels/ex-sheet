@@ -34,6 +34,7 @@ interface RibbonContainerProps {
   onFill: (direction: 'down' | 'right') => void;
   onClearFormatting: () => void;
   onDemoData: (demoData: Record<string, any>) => void;
+  onMultiCellOperation?: (operation: string, value?: string) => void;
 }
 
 const RibbonContainer: React.FC<RibbonContainerProps> = (props) => {

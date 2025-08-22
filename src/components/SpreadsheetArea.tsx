@@ -23,6 +23,8 @@ interface SpreadsheetAreaProps {
   handleRedo: () => void;
   handleColumnDragDrop?: (sourceIndex: number, targetIndex: number) => void;
   handleRowDragDrop?: (sourceIndex: number, targetIndex: number) => void;
+  onMultiCellOperation?: (operation: string, value?: string) => void;
+  onFillSeries?: (options: any) => void;
 }
 
 const SpreadsheetArea: React.FC<SpreadsheetAreaProps> = ({
@@ -42,7 +44,9 @@ const SpreadsheetArea: React.FC<SpreadsheetAreaProps> = ({
   handleUndo,
   handleRedo,
   handleColumnDragDrop,
-  handleRowDragDrop
+  handleRowDragDrop,
+  onMultiCellOperation = () => {},
+  onFillSeries = () => {}
 }) => {
   // Make the column drag drop handler available globally for the SpreadsheetHeader component
   if (handleColumnDragDrop) {
@@ -67,18 +71,19 @@ const SpreadsheetArea: React.FC<SpreadsheetAreaProps> = ({
         />
       </div>
       <div className="flex-grow overflow-hidden">
-        <SpreadsheetContainer 
-          sheet={activeSheet}
-          onCellChange={handleCellChange}
-          onCellSelect={handleCellSelect}
-          onCellSelectionChange={handleCellSelectionChange}
-          onColumnWidthChange={updateColumnWidth}
-          onRowHeightChange={updateRowHeight}
-          onCopy={handleCopy}
-          onCut={handleCut}
-          onPaste={handlePaste}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
+        <SpreadsheetContainer
+          activeSheet={activeSheet}
+          activeCell={activeCell}
+          formulaValue={formulaValue}
+          cellSelection={cellSelection}
+          handleCellChange={handleCellChange}
+          handleCellSelect={handleCellSelect}
+          handleCellSelectionChange={handleCellSelectionChange}
+          handleFormulaChange={handleFormulaChange}
+          updateColumnWidth={updateColumnWidth}
+          updateRowHeight={updateRowHeight}
+          onMultiCellOperation={onMultiCellOperation || (() => {})}
+          onFillSeries={onFillSeries || (() => {})}
         />
       </div>
     </>

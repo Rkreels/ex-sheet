@@ -137,6 +137,7 @@ const ExcelApp: React.FC = () => {
         onFill={cellOperations.handleFill}
         onClearFormatting={cellOperations.handleClearFormatting}
         onDemoData={handleDemoData}
+        onMultiCellOperation={cellOperations.handleMultiCellOperation}
       />
 
       {/* Main Spreadsheet Area */}
@@ -159,6 +160,15 @@ const ExcelApp: React.FC = () => {
           handleRedo={handleRedo}
           handleColumnDragDrop={handleColumnDragDrop}
           handleRowDragDrop={handleRowDragDrop}
+          onMultiCellOperation={cellOperations.handleMultiCellOperation}
+          onFillSeries={(options) => {
+            // Handle smart fill series
+            if (cellSelection) {
+              const { startCell, endCell } = cellSelection;
+              // Implementation for smart fill would go here
+              console.log('Fill series:', options, startCell, endCell);
+            }
+          }}
         />
       </div>
 

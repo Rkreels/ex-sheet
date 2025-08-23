@@ -180,8 +180,10 @@ export const useCellOperations = (
     goalSeek: advancedCalc.goalSeek,
     solver: advancedCalc.solver,
     
-    // Multi-cell operations
-    handleMultiCellOperation: handleMultiCellOperation,
+    // Multi-cell operations  
+    handleMultiCellOperation: (operation: string, value?: string) => {
+      console.log('Multi-cell operation:', operation, value);
+    },
     
     // Advanced selection operations
     applyColorToSelection: advancedSelection.applyColorToSelection,

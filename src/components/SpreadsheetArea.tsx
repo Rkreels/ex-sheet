@@ -72,18 +72,19 @@ const SpreadsheetArea: React.FC<SpreadsheetAreaProps> = ({
       </div>
       <div className="flex-grow overflow-hidden">
         <SpreadsheetContainer
-          activeSheet={activeSheet}
-          activeCell={activeCell}
-          formulaValue={formulaValue}
-          cellSelection={cellSelection}
-          handleCellChange={handleCellChange}
-          handleCellSelect={handleCellSelect}
-          handleCellSelectionChange={handleCellSelectionChange}
-          handleFormulaChange={handleFormulaChange}
-          updateColumnWidth={updateColumnWidth}
-          updateRowHeight={updateRowHeight}
-          onMultiCellOperation={onMultiCellOperation || (() => {})}
-          onFillSeries={onFillSeries || (() => {})}
+          sheet={activeSheet}
+          onCellChange={handleCellChange}
+          onCellSelect={handleCellSelect}
+          onCellSelectionChange={handleCellSelectionChange}
+          onColumnWidthChange={updateColumnWidth}
+          onRowHeightChange={updateRowHeight}
+          onCopy={handleCopy}
+          onCut={handleCut}
+          onPaste={handlePaste}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onDelete={() => {}}
+          onFind={() => {}}
         />
       </div>
     </>

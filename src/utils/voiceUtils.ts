@@ -17,8 +17,8 @@ export const speak = (text: string): void => {
     return;
   }
   
-  // Check if speech is muted in local storage
-  const isMuted = localStorage.getItem('voiceMuted') === 'true';
+  // Check if speech is muted in local storage - default to muted (true)
+  const isMuted = localStorage.getItem('voiceMuted') !== 'false';
   if (isMuted) {
     console.log('Voice is muted, not speaking:', text);
     return;

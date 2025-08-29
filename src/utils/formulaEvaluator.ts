@@ -28,31 +28,35 @@ export const evaluateFormula = (formula: string, cells: Record<string, Cell>, pa
       return getCellValue(cellRef, cells, parentFormula, newVisited).toString();
     });
     
-    // Enhanced formula evaluation with proper operator handling
+    // Enhanced formula evaluation with proper mathematical operations
     try {
-      // Handle string concatenation with &
-      result = result.replace(/([^&])&([^&])/g, '$1+$2');
-      
-      // Handle percentage calculations
+      // Handle percentage first - before mathematical evaluation
       result = result.replace(/(\d+(?:\.\d+)?)%/g, (match, num) => {
         return (parseFloat(num) / 100).toString();
       });
       
-      // Fix multiplication, division, and other operators
-      result = result.replace(/\*/g, '*');
-      result = result.replace(/\//g, '/');
-      result = result.replace(/\+/g, '+');
-      result = result.replace(/-/g, '-');
+      // Handle string concatenation with &
+      result = result.replace(/([^&])&([^&])/g, '$1+$2');
       
-      // Evaluate the expression safely
+      // Clean up any double operators
+      result = result.replace(/\+\+/g, '+');
+      result = result.replace(/--/g, '+');
+      
+      // Handle exponentiation operator ^ to **
+      result = result.replace(/\^/g, '**');
+      
+      // Evaluate the mathematical expression safely
       const evalResult = new Function(`"use strict"; return (${result})`)();
       
-      // Return proper values
+      // Return proper values with better number handling
       if (typeof evalResult === 'number') {
-        return isNaN(evalResult) ? '#VALUE!' : evalResult;
+        if (isNaN(evalResult)) return '#VALUE!';
+        if (!isFinite(evalResult)) return '#DIV/0!';
+        return evalResult;
       }
       return evalResult;
     } catch (error) {
+      console.error('Mathematical evaluation failed:', error);
       // If mathematical evaluation fails, try as string concatenation
       if (result.includes('"') || result.includes("'")) {
         return result.replace(/"/g, '').replace(/'/g, '');

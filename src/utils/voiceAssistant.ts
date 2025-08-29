@@ -188,7 +188,7 @@ const voiceAssistant = {
   },
   
   toggleMute: (): boolean => {
-    const isMuted = localStorage.getItem('voiceMuted') === 'true';
+    const isMuted = localStorage.getItem('voiceMuted') !== 'false';
     localStorage.setItem('voiceMuted', (!isMuted).toString());
     
     if (!isMuted) {

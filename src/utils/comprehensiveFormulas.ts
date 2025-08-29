@@ -336,6 +336,30 @@ export const comprehensiveFormulas = {
     name: 'ISTEXT',
     description: 'Checks whether a value is text',
     execute: (args: any[]) => typeof args[0] === 'string' && isNaN(parseFloat(args[0]))
+  },
+
+  // Financial Functions
+  PAYBACK: {
+    name: 'PAYBACK',
+    description: 'Calculates the payback period for an investment',
+    execute: (args: any[]) => {
+      const flows = Array.isArray(args[0]) ? args[0].flat() : args;
+      const investment = Math.abs(flows[0]);
+      
+      let cumulativeFlow = -investment;
+      
+      for (let i = 1; i < flows.length; i++) {
+        cumulativeFlow += Number(flows[i]);
+        if (cumulativeFlow >= 0) {
+          // Linear interpolation for fractional year
+          const previousFlow = cumulativeFlow - Number(flows[i]);
+          const fraction = Math.abs(previousFlow) / Number(flows[i]);
+          return i - 1 + fraction;
+        }
+      }
+      
+      return flows.length; // Payback period exceeds the time horizon
+    }
   }
 };
 

@@ -1,10 +1,12 @@
 import formulaFunctions from './formulaFunctions';
 import { missingExcelFunctions } from './missingExcelFunctions';
+import { advancedExcelFunctions } from './advancedExcelFunctions';
 
-// Comprehensive formula functions combining all Excel functionality
+// Comprehensive formula functions combining all Excel functionality (600+ functions)
 export const comprehensiveFormulas = {
   ...formulaFunctions,
   ...missingExcelFunctions,
+  ...advancedExcelFunctions,
   
   // Advanced Math Functions
   RANDBETWEEN: {

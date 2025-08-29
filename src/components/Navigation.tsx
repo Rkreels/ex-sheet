@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, Database, TrendingUp, DollarSign } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem } from './ui/dropdown-menu';
+import { Volume2, VolumeX, Database, TrendingUp, DollarSign, Folder, ExternalLink, BarChart3, FileText, Palette, Menu, Download, Upload } from "lucide-react";
 import voiceAssistant from '../utils/voiceAssistant';
-import { generateDemoData, generateFinancialModelDemo, generateMarketingAnalyticsDemo } from '../utils/demoData';
+import { generateSalesPerformanceTemplate, generateFinancialModelTemplate, generateMarketingAnalyticsTemplate } from '../templates';
 import { toast } from 'sonner';
 
 interface NavigationProps {
@@ -21,22 +22,26 @@ const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const [isMuted, setIsMuted] = React.useState(false);
 
-  const handleDemoData = () => {
-    const demoData = generateDemoData();
-    onLoadDemoData(demoData);
-    voiceAssistant.speak("Comprehensive multi-departmental demo data loaded with advanced formulas and calculations.");
+  const handleSalesPerformanceTemplate = () => {
+    const salesData = generateSalesPerformanceTemplate();
+    onLoadDemoData(salesData);
+    voiceAssistant.speak("Sales performance template loaded with advanced formulas and calculations.");
   };
 
-  const handleFinancialDemo = () => {
-    const financialData = generateFinancialModelDemo();
+  const handleFinancialTemplate = () => {
+    const financialData = generateFinancialModelTemplate();
     onLoadDemoData(financialData);
-    voiceAssistant.speak("Financial modeling demo with DCF analysis loaded.");
+    voiceAssistant.speak("Financial modeling template with DCF analysis loaded.");
   };
 
-  const handleMarketingDemo = () => {
-    const marketingData = generateMarketingAnalyticsDemo();
+  const handleMarketingTemplate = () => {
+    const marketingData = generateMarketingAnalyticsTemplate();
     onLoadDemoData(marketingData);
-    voiceAssistant.speak("Marketing analytics demo with campaign performance metrics loaded.");
+    voiceAssistant.speak("Marketing analytics template with campaign performance metrics loaded.");
+  };
+
+  const handleMasterDashboard = () => {
+    window.open('https://skillsim.vercel.app/dashboard', '_self');
   };
 
   const handleToggleMute = () => {
@@ -54,38 +59,74 @@ const Navigation: React.FC<NavigationProps> = ({
       
       <div className="border-l border-gray-300 h-6 mx-2"></div>
       
-      <Button
-        variant="outline"
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs mr-1 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white/90 transition-all duration-200"
+          >
+            <Folder className="h-3 w-3 mr-1" />
+            Templates
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48 bg-white/95 backdrop-blur-sm border-gray-200/50">
+          <DropdownMenuItem 
+            className="cursor-pointer hover:bg-gray-50/80 text-xs"
+            onClick={handleSalesPerformanceTemplate}
+          >
+            <BarChart3 className="h-3 w-3 mr-2" />
+            Sales Performance
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            className="cursor-pointer hover:bg-gray-50/80 text-xs"
+            onClick={handleFinancialTemplate}
+          >
+            <FileText className="h-3 w-3 mr-2" />
+            Financial Modeling
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            className="cursor-pointer hover:bg-gray-50/80 text-xs"
+            onClick={handleMarketingTemplate}
+          >
+            <Palette className="h-3 w-3 mr-2" />
+            Marketing Analytics
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Button 
+        variant="outline" 
         size="sm"
-        onClick={handleDemoData}
-        className="text-xs mr-1"
-        data-voice-hover="Load comprehensive multi-departmental demo data"
+        onClick={handleMasterDashboard}
+        className="text-xs mr-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
       >
-        <Database className="h-3 w-3 mr-1" />
-        Multi-Dept Demo
+        <ExternalLink className="h-3 w-3 mr-1" />
+        Master Dashboard
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleFinancialDemo}
-        className="text-xs mr-1"
-        data-voice-hover="Load financial modeling demo"
-      >
-        <DollarSign className="h-3 w-3 mr-1" />
-        Financial Model
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleMarketingDemo}
-        className="text-xs mr-1"
-        data-voice-hover="Load marketing analytics demo"
-      >
-        <TrendingUp className="h-3 w-3 mr-1" />
-        Marketing Analytics
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs mr-1 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white/90 transition-all duration-200"
+          >
+            <Menu className="h-3 w-3 mr-1" />
+            More
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48 bg-white/95 backdrop-blur-sm border-gray-200/50">
+          <DropdownMenuItem className="cursor-pointer hover:bg-gray-50/80 text-xs">
+            <Download className="h-3 w-3 mr-2" />
+            Export Data
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer hover:bg-gray-50/80 text-xs">
+            <Upload className="h-3 w-3 mr-2" />
+            Import Data
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       
       <Button
         variant="ghost"

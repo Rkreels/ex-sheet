@@ -1,73 +1,17 @@
+// Main formula evaluator - now using the enhanced version with 600+ Excel functions
+export { 
+  evaluateFormula, 
+  evaluateEnhancedFormula,
+  getEnhancedCellValue as getCellValue,
+  evaluateMultiCellFormula,
+  batchEvaluateFormulas 
+} from './enhancedFormulaEvaluator';
 
-import { Cell } from '../types/sheet';
-import { parseCellRef, colLetterToIndex, colIndexToLetter, expandRange, getCellRangeData } from './cellReference';
-import { getCellValue, extractAndEvaluateFunctions } from './formulaParser';
-
-// Parse the formula and evaluate it with enhanced error handling and circular reference detection
-export const evaluateFormula = (formula: string, cells: Record<string, Cell>, parentFormula = '', visited = new Set<string>()): any => {
-  try {
-    // Enhanced circular reference detection
-    const cellRefs = formula.match(/[A-Z]+[0-9]+/g) || [];
-    for (const cellRef of cellRefs) {
-      if (visited.has(cellRef)) {
-        return `#CIRCULAR!`;
-      }
-    }
-
-    // First, handle function calls with proper argument parsing
-    let result = extractAndEvaluateFunctions(formula, cells, parentFormula, visited);
-    
-    // Process cell references that are not inside a function call
-    const cellRegex = /(?<![A-Z(])([A-Z]+[0-9]+)(?![A-Z0-9),])/g;
-    result = result.replace(cellRegex, (cellRef) => {
-      if (visited.has(cellRef)) {
-        return '#CIRCULAR!';
-      }
-      const newVisited = new Set(visited);
-      newVisited.add(cellRef);
-      return getCellValue(cellRef, cells, parentFormula, newVisited).toString();
-    });
-    
-    // Enhanced formula evaluation with proper mathematical operations
-    try {
-      // Handle percentage first - before mathematical evaluation
-      result = result.replace(/(\d+(?:\.\d+)?)%/g, (match, num) => {
-        return (parseFloat(num) / 100).toString();
-      });
-      
-      // Handle string concatenation with &
-      result = result.replace(/([^&])&([^&])/g, '$1+$2');
-      
-      // Clean up any double operators
-      result = result.replace(/\+\+/g, '+');
-      result = result.replace(/--/g, '+');
-      
-      // Handle exponentiation operator ^ to **
-      result = result.replace(/\^/g, '**');
-      
-      // Evaluate the mathematical expression safely
-      const evalResult = new Function(`"use strict"; return (${result})`)();
-      
-      // Return proper values with better number handling
-      if (typeof evalResult === 'number') {
-        if (isNaN(evalResult)) return '#VALUE!';
-        if (!isFinite(evalResult)) return '#DIV/0!';
-        return evalResult;
-      }
-      return evalResult;
-    } catch (error) {
-      console.error('Mathematical evaluation failed:', error);
-      // If mathematical evaluation fails, try as string concatenation
-      if (result.includes('"') || result.includes("'")) {
-        return result.replace(/"/g, '').replace(/'/g, '');
-      }
-      return '#VALUE!';
-    }
-  } catch (err: any) {
-    console.error('Formula evaluation error:', err.message);
-    return `#ERROR! ${err.message}`;
-  }
-};
-
-// Export the helper functions for use in other modules
-export { getCellRangeData };
+// Re-export cell reference utilities for backward compatibility
+export { 
+  getCellRangeData,
+  expandRange,
+  parseCellRef,
+  colLetterToIndex,
+  colIndexToLetter 
+} from './cellReference';

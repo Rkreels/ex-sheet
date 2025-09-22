@@ -64,11 +64,34 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
       return;
     }
 
-    if (cellData.value.startsWith('=')) {
+    if (typeof cellData.value === 'string' && cellData.value.startsWith('=')) {
+      // Prefer precomputed value when available (performance)
+      const computed = (cellData as any).calculatedValue;
+      if (computed !== undefined) {
+        const result = computed as any;
+        if (typeof result === 'number' && cellData.format?.numberFormat) {
+          switch (cellData.format.numberFormat) {
+            case 'percentage':
+              setDisplayValue((result * 100).toFixed(2) + '%');
+              break;
+            case 'currency':
+              setDisplayValue('$' + result.toFixed(2));
+              break;
+            case 'number':
+              setDisplayValue(result.toFixed(2));
+              break;
+            default:
+              setDisplayValue(result.toString());
+          }
+        } else {
+          setDisplayValue(String(result));
+        }
+        return;
+      }
+
+      // Fallback: compute on the fly
       try {
         const result = evaluateFormula(cellData.value.substring(1), cells);
-        
-        // Format numbers based on cell format
         if (typeof result === 'number' && cellData.format?.numberFormat) {
           switch (cellData.format.numberFormat) {
             case 'percentage':
@@ -105,13 +128,13 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
             setDisplayValue(num.toFixed(2));
             break;
           default:
-            setDisplayValue(cellData.value);
+            setDisplayValue(String(cellData.value));
         }
       } else {
-        setDisplayValue(cellData.value);
+        setDisplayValue(String(cellData.value));
       }
     }
-  }, [cellData?.value, cellData?.format, cells]);
+  }, [cellData?.value, cellData?.format, (cellData as any)?.calculatedValue, cells]);
 
   // Update edit value when cell becomes active
   useEffect(() => {

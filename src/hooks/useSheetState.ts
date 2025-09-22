@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { Sheet, Cell, CellSelection } from '../types/sheet';
-import { evaluateFormula } from '../utils/formulaEvaluator';
+import { batchEvaluateFormulas } from '../utils/formulaEvaluator';
 import { toast } from 'sonner';
 import voiceAssistant from '../utils/voiceAssistant';
 import { useUndoRedo } from './state/useUndoRedo';
@@ -90,14 +90,44 @@ export const useSheetState = () => {
 
   const handleDemoData = (demoData: Record<string, any>) => {
     saveState();
+
+    // Deep copy and clear any previous calculated values
+    const newCells: Record<string, Cell> = {};
+    Object.entries(demoData).forEach(([key, cell]) => {
+      newCells[key] = { ...cell } as Cell;
+      if ('calculatedValue' in newCells[key]!) {
+        delete (newCells[key] as any).calculatedValue;
+      }
+    });
+
+    // Set cells immediately for snappy UI, then batch-calculate formulas
     setSheets(prevSheets => 
       prevSheets.map(sheet => 
         sheet.id === activeSheetId 
-          ? { ...sheet, cells: demoData }
+          ? { ...sheet, cells: newCells }
           : sheet
       )
     );
-    toast.success("Demo data loaded successfully!");
+
+    // Batch evaluate formulas without blocking UI
+    setTimeout(() => {
+      const formulaCells = Object.keys(newCells).filter(
+        (id) => typeof newCells[id]?.value === 'string' && String(newCells[id].value).startsWith('=')
+      );
+
+      if (formulaCells.length > 0) {
+        batchEvaluateFormulas(formulaCells, newCells);
+        setSheets(prevSheets => 
+          prevSheets.map(sheet => 
+            sheet.id === activeSheetId 
+              ? { ...sheet, cells: { ...newCells } }
+              : sheet
+          )
+        );
+      }
+
+      toast.success("Template loaded successfully!");
+    }, 0);
   };
 
   return {

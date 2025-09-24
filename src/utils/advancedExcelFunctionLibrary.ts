@@ -696,6 +696,149 @@ export const advancedExcelFunctionLibrary = {
       
       return result;
     }
+  },
+
+  // Multi-criteria aggregate functions
+  SUMIFS: {
+    name: 'SUMIFS',
+    description: 'Sums values that meet multiple criteria',
+    execute: (args: any[]) => {
+      if (args.length < 3 || args.length % 2 === 0) return '#VALUE!';
+      const toFlat = (a: any) => Array.isArray(a) ? a.flat() : [a];
+      const sumRange = toFlat(args[0]).map((v) => (typeof v === 'number' ? v : parseFloat(v))).map(v => (isNaN(v) ? 0 : v));
+
+      const criteriaPairs: { range: any[]; criterion: any }[] = [];
+      for (let i = 1; i < args.length; i += 2) {
+        criteriaPairs.push({ range: toFlat(args[i]), criterion: args[i + 1] });
+      }
+
+      const minLen = Math.min(sumRange.length, ...criteriaPairs.map(p => p.range.length));
+
+      const matchCriteria = (val: any, crit: any): boolean => {
+        if (typeof crit === 'number' || typeof crit === 'boolean') return val == crit;
+        const s = String(crit).trim();
+        const vNum = parseFloat(val);
+        const vStr = String(val);
+        const opMatch = s.match(/^(>=|<=|<>|>|<|=)(.*)$/);
+        if (opMatch) {
+          const op = opMatch[1];
+          const rhsRaw = opMatch[2].trim();
+          const rhsNum = parseFloat(rhsRaw);
+          const rhs = isNaN(rhsNum) ? rhsRaw : rhsNum;
+          const lv = typeof rhs === 'number' ? (isNaN(vNum) ? NaN : vNum) : vStr;
+          switch (op) {
+            case '>': return typeof rhs === 'number' && typeof lv === 'number' ? lv > rhs : vStr > String(rhs);
+            case '<': return typeof rhs === 'number' && typeof lv === 'number' ? lv < rhs : vStr < String(rhs);
+            case '>=': return typeof rhs === 'number' && typeof lv === 'number' ? lv >= rhs : vStr >= String(rhs);
+            case '<=': return typeof rhs === 'number' && typeof lv === 'number' ? lv <= rhs : vStr <= String(rhs);
+            case '<>': return vStr !== String(rhs);
+            case '=': return vStr === String(rhs);
+          }
+        }
+        return vStr === s;
+      };
+
+      let sum = 0;
+      for (let i = 0; i < minLen; i++) {
+        const ok = criteriaPairs.every(p => matchCriteria(p.range[i], p.criterion));
+        if (ok) sum += sumRange[i] || 0;
+      }
+      return sum;
+    }
+  },
+
+  COUNTIFS: {
+    name: 'COUNTIFS',
+    description: 'Counts values that meet multiple criteria',
+    execute: (args: any[]) => {
+      if (args.length < 2 || args.length % 2 !== 0) return '#VALUE!';
+      const toFlat = (a: any) => Array.isArray(a) ? a.flat() : [a];
+      const pairs: { range: any[]; criterion: any }[] = [];
+      for (let i = 0; i < args.length; i += 2) {
+        pairs.push({ range: toFlat(args[i]), criterion: args[i + 1] });
+      }
+      const minLen = Math.min(...pairs.map(p => p.range.length));
+
+      const matchCriteria = (val: any, crit: any): boolean => {
+        if (typeof crit === 'number' || typeof crit === 'boolean') return val == crit;
+        const s = String(crit).trim();
+        const vNum = parseFloat(val);
+        const vStr = String(val);
+        const opMatch = s.match(/^(>=|<=|<>|>|<|=)(.*)$/);
+        if (opMatch) {
+          const op = opMatch[1];
+          const rhsRaw = opMatch[2].trim();
+          const rhsNum = parseFloat(rhsRaw);
+          const rhs = isNaN(rhsNum) ? rhsRaw : rhsNum;
+          const lv = typeof rhs === 'number' ? (isNaN(vNum) ? NaN : vNum) : vStr;
+          switch (op) {
+            case '>': return typeof rhs === 'number' && typeof lv === 'number' ? lv > rhs : vStr > String(rhs);
+            case '<': return typeof rhs === 'number' && typeof lv === 'number' ? lv < rhs : vStr < String(rhs);
+            case '>=': return typeof rhs === 'number' && typeof lv === 'number' ? lv >= rhs : vStr >= String(rhs);
+            case '<=': return typeof rhs === 'number' && typeof lv === 'number' ? lv <= rhs : vStr <= String(rhs);
+            case '<>': return vStr !== String(rhs);
+            case '=': return vStr === String(rhs);
+          }
+        }
+        return vStr === s;
+      };
+
+      let count = 0;
+      for (let i = 0; i < minLen; i++) {
+        if (pairs.every(p => matchCriteria(p.range[i], p.criterion))) count++;
+      }
+      return count;
+    }
+  },
+
+  AVERAGEIFS: {
+    name: 'AVERAGEIFS',
+    description: 'Averages values that meet multiple criteria',
+    execute: (args: any[]) => {
+      if (args.length < 3 || args.length % 2 === 0) return '#VALUE!';
+      const toFlat = (a: any) => Array.isArray(a) ? a.flat() : [a];
+      const avgRange = toFlat(args[0]).map((v) => (typeof v === 'number' ? v : parseFloat(v))).map(v => (isNaN(v) ? 0 : v));
+      const criteriaPairs: { range: any[]; criterion: any }[] = [];
+      for (let i = 1; i < args.length; i += 2) {
+        criteriaPairs.push({ range: toFlat(args[i]), criterion: args[i + 1] });
+      }
+      const minLen = Math.min(avgRange.length, ...criteriaPairs.map(p => p.range.length));
+
+      const matchCriteria = (val: any, crit: any): boolean => {
+        if (typeof crit === 'number' || typeof crit === 'boolean') return val == crit;
+        const s = String(crit).trim();
+        const vNum = parseFloat(val);
+        const vStr = String(val);
+        const opMatch = s.match(/^(>=|<=|<>|>|<|=)(.*)$/);
+        if (opMatch) {
+          const op = opMatch[1];
+          const rhsRaw = opMatch[2].trim();
+          const rhsNum = parseFloat(rhsRaw);
+          const rhs = isNaN(rhsNum) ? rhsRaw : rhsNum;
+          const lv = typeof rhs === 'number' ? (isNaN(vNum) ? NaN : vNum) : vStr;
+          switch (op) {
+            case '>': return typeof rhs === 'number' && typeof lv === 'number' ? lv > rhs : vStr > String(rhs);
+            case '<': return typeof rhs === 'number' && typeof lv === 'number' ? lv < rhs : vStr < String(rhs);
+            case '>=': return typeof rhs === 'number' && typeof lv === 'number' ? lv >= rhs : vStr >= String(rhs);
+            case '<=': return typeof rhs === 'number' && typeof lv === 'number' ? lv <= rhs : vStr <= String(rhs);
+            case '<>': return vStr !== String(rhs);
+            case '=': return vStr === String(rhs);
+          }
+        }
+        return vStr === s;
+      };
+
+      let total = 0;
+      let count = 0;
+      for (let i = 0; i < minLen; i++) {
+        const ok = criteriaPairs.every(p => matchCriteria(p.range[i], p.criterion));
+        if (ok) {
+          total += avgRange[i] || 0;
+          count++;
+        }
+      }
+      return count === 0 ? '#DIV/0!' : total / count;
+    }
   }
 };
 

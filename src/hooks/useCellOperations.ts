@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
 import { Sheet, Cell, NumberFormat } from '../types/sheet';
-import { evaluateFormula } from '../utils/formulaEvaluator';
 import { useFormatting } from './useFormatting';
 import { useNumberFormatting } from './useNumberFormatting';
 import { useSorting } from './useSorting';
@@ -15,7 +14,7 @@ import { useAdvancedCalculations } from './useAdvancedCalculations';
 import { useAdvancedCellSelection } from './useAdvancedCellSelection';
 import { toast } from 'sonner';
 import { createAdvancedFormulaEngine } from '../utils/advancedFormulaEngine';
-
+import { batchEvaluateFormulas } from '../utils/formulaEvaluator';
 export const useCellOperations = (
   activeSheet: Sheet,
   activeSheetId: string,
@@ -76,19 +75,27 @@ export const useCellOperations = (
   const advancedCalc = useAdvancedCalculations(activeSheet, activeSheetId, setSheets);
   const advancedSelection = useAdvancedCellSelection(setSheets, activeSheetId);
 
-  // Enhanced formula evaluation effect
+  // Enhanced formula evaluation effect (lightweight, only when needed)
   useEffect(() => {
     if (!activeSheet?.cells) return;
-    
+
+    const cells = activeSheet.cells as Record<string, any>;
+    const formulaCells = Object.keys(cells).filter(id => {
+      const v = cells[id]?.value;
+      return typeof v === 'string' && String(v).startsWith('=');
+    });
+
+    // Only run if some formulas have not been computed yet
+    const needsCalc = formulaCells.some(id => cells[id]?.calculatedValue === undefined);
+    if (!needsCalc) return;
+
     try {
-      const engine = createAdvancedFormulaEngine(activeSheet.cells);
-      const updatedCells = engine.evaluateAll();
-      
+      const updatedCells = { ...cells };
+      batchEvaluateFormulas(formulaCells, updatedCells);
+
       // Only update if there are actual changes
-      const hasChanges = Object.keys(updatedCells).some(cellId => {
-        const current = activeSheet.cells[cellId];
-        const updated = updatedCells[cellId];
-        return current?.calculatedValue !== updated?.calculatedValue;
+      const hasChanges = formulaCells.some(cellId => {
+        return activeSheet.cells[cellId]?.calculatedValue !== updatedCells[cellId]?.calculatedValue;
       });
 
       if (hasChanges) {
@@ -101,7 +108,7 @@ export const useCellOperations = (
         );
       }
     } catch (error) {
-      console.error('Advanced formula evaluation error:', error);
+      console.error('Batch formula evaluation error:', error);
     }
   }, [activeSheet?.cells, activeSheetId, setSheets]);
 

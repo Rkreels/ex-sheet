@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { evaluateFormula } from '../utils/formulaEvaluator';
+
 import { Cell } from '../types/sheet';
 import CellContextMenu from './CellContextMenu';
 import CellDisplay from './cell/CellDisplay';
@@ -89,30 +89,9 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         return;
       }
 
-      // Fallback: compute on the fly
-      try {
-        const result = evaluateFormula(cellData.value.substring(1), cells);
-        if (typeof result === 'number' && cellData.format?.numberFormat) {
-          switch (cellData.format.numberFormat) {
-            case 'percentage':
-              setDisplayValue((result * 100).toFixed(2) + '%');
-              break;
-            case 'currency':
-              setDisplayValue('$' + result.toFixed(2));
-              break;
-            case 'number':
-              setDisplayValue(result.toFixed(2));
-              break;
-            default:
-              setDisplayValue(result.toString());
-          }
-        } else {
-          setDisplayValue(result.toString());
-        }
-      } catch (error) {
-        console.error('Formula evaluation error:', error);
-        setDisplayValue('#ERROR!');
-      }
+      // Fallback: defer evaluation to background worker to keep UI responsive
+      setDisplayValue('...');
+
     } else {
       // Handle direct number formatting
       if (cellData.format?.numberFormat && !isNaN(parseFloat(cellData.value))) {

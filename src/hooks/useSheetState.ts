@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, startTransition } from 'react';
 import { Sheet, Cell, CellSelection } from '../types/sheet';
 import { toast } from 'sonner';
 import voiceAssistant from '../utils/voiceAssistant';
@@ -109,23 +109,53 @@ export const useSheetState = () => {
       )
     );
 
-    // Recalculate in a Web Worker to keep UI responsive
-    (async () => {
+    // Defer recalculation to idle time and apply results in chunks to keep UI responsive
+    const currentSheetId = activeSheetId;
+    const ric = (cb: () => void) => {
+      if (typeof (window as any).requestIdleCallback === 'function') {
+        (window as any).requestIdleCallback(cb);
+      } else {
+        setTimeout(cb, 0);
+      }
+    };
+
+    ric(async () => {
       try {
         const { cells: computed } = await recalcAll(newCells);
-        setSheets(prevSheets => 
-          prevSheets.map(sheet => 
-            sheet.id === activeSheetId 
-              ? { ...sheet, cells: { ...computed } }
-              : sheet
-          )
-        );
-        toast.success("Template loaded successfully!");
+
+        const entries = Object.entries(computed);
+        const chunkSize = 500;
+        let index = 0;
+
+        const applyNext = () => {
+          if (index >= entries.length) {
+            toast.success("Template loaded successfully!");
+            return;
+          }
+          const slice = entries.slice(index, index + chunkSize);
+          index += chunkSize;
+
+          startTransition(() => {
+            setSheets(prevSheets =>
+              prevSheets.map(sheet =>
+                sheet.id === currentSheetId
+                  ? { ...sheet, cells: { ...sheet.cells, ...Object.fromEntries(slice) } }
+                  : sheet
+              )
+            );
+          });
+
+          // Schedule next chunk without blocking
+          setTimeout(applyNext, 0);
+        };
+
+        applyNext();
       } catch (err) {
         console.error('Template recalculation error:', err);
         toast.error('Template loaded with calculation issues.');
       }
-    })();
+    });
+
   };
 
   return {

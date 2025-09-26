@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { cn } from '@/lib/utils';
-import { evaluateFormula } from '../utils/formulaEvaluator';
 import { Cell } from '../types/sheet';
-import { comprehensiveFormulas } from '../utils/comprehensiveFormulas';
 
 interface OptimizedSpreadsheetCellProps {
   cellId: string;

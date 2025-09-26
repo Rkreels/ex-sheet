@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Cell, CellFormat } from '../types/sheet';
-import { evaluateFormula } from '../utils/formulaEvaluator';
+import { Cell } from '../types/sheet';
+
 
 interface EnhancedSpreadsheetCellProps {
   cellId: string;
@@ -65,18 +65,11 @@ const EnhancedSpreadsheetCell: React.FC<EnhancedSpreadsheetCellProps> = ({
       return String(calcValue);
     }
     
-    // For formulas, show calculated result
+    // For formulas, defer evaluation to background worker for responsiveness
     if (value.startsWith('=')) {
-      try {
-        const result = evaluateFormula(value.substring(1), allCells);
-        if (typeof result === 'number' && format.numberFormat) {
-          return formatNumber(result, format.numberFormat);
-        }
-        return String(result);
-      } catch (error) {
-        return '#ERROR!';
-      }
+      return '...';
     }
+
     
     // For regular values, apply formatting
     if (format.numberFormat && !isNaN(parseFloat(value))) {

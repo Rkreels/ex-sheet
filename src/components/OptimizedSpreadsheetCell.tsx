@@ -45,49 +45,7 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
   const cellRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Optimized formula evaluation with caching
-  const evaluateFormulaCached = useCallback((formula: string, cellsData: Record<string, Cell>) => {
-    try {
-      const cleanFormula = formula.startsWith('=') ? formula.substring(1) : formula;
-      
-      // Check if it's a function call
-      const functionMatch = cleanFormula.match(/^([A-Z]+)\s*\(/);
-      if (functionMatch) {
-        const functionName = functionMatch[1];
-        const formulaFunction = comprehensiveFormulas[functionName];
-        
-        if (formulaFunction) {
-          // Parse arguments
-          const argsString = cleanFormula.substring(functionName.length + 1, cleanFormula.lastIndexOf(')'));
-          const args = argsString.split(',').map(arg => {
-            const trimmed = arg.trim();
-            
-            // Check if it's a cell reference
-            if (/^[A-Z]+\d+$/.test(trimmed)) {
-              return cellsData[trimmed]?.value || 0;
-            }
-            
-            // Check if it's a number
-            const num = parseFloat(trimmed);
-            if (!isNaN(num)) return num;
-            
-            // Return as string (remove quotes if present)
-            return trimmed.replace(/^["']|["']$/g, '');
-          });
-          
-          return formulaFunction.execute(args);
-        }
-      }
-      
-      // Fallback to original evaluation
-      return evaluateFormula(cleanFormula, cellsData);
-    } catch (error) {
-      console.error('Formula evaluation error:', error);
-      return '#ERROR!';
-    }
-  }, []);
-
-  // Calculate display value with optimization
+  // Calculate display value using only pre-calculated results for performance
   useEffect(() => {
     if (!cellData?.value) {
       setDisplayValue('');
@@ -95,25 +53,30 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
     }
 
     if (cellData.value.startsWith('=')) {
-      const result = evaluateFormulaCached(cellData.value, cells);
-      
-      // Format numbers based on cell format
-      if (typeof result === 'number' && cellData.format?.numberFormat) {
-        switch (cellData.format.numberFormat) {
-          case 'percentage':
-            setDisplayValue((result * 100).toFixed(2) + '%');
-            break;
-          case 'currency':
-            setDisplayValue('$' + result.toFixed(2));
-            break;
-          case 'number':
-            setDisplayValue(result.toFixed(2));
-            break;
-          default:
-            setDisplayValue(result.toString());
+      // Use pre-calculated value from worker if available
+      const calculatedValue = (cellData as any).calculatedValue;
+      if (calculatedValue !== undefined) {
+        // Format the calculated result
+        if (typeof calculatedValue === 'number' && cellData.format?.numberFormat) {
+          switch (cellData.format.numberFormat) {
+            case 'percentage':
+              setDisplayValue((calculatedValue * 100).toFixed(2) + '%');
+              break;
+            case 'currency':
+              setDisplayValue('$' + calculatedValue.toFixed(2));
+              break;
+            case 'number':
+              setDisplayValue(calculatedValue.toFixed(2));
+              break;
+            default:
+              setDisplayValue(calculatedValue.toString());
+          }
+        } else {
+          setDisplayValue(String(calculatedValue));
         }
       } else {
-        setDisplayValue(result.toString());
+        // Show placeholder while calculation is pending
+        setDisplayValue('...');
       }
     } else {
       // Handle direct number formatting
@@ -136,7 +99,7 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
         setDisplayValue(cellData.value);
       }
     }
-  }, [cellData, cells, evaluateFormulaCached]);
+  }, [cellData]);
 
   // Handle single click to select
   const handleClick = useCallback((e: React.MouseEvent) => {

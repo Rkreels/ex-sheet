@@ -1,12 +1,12 @@
 
 import { useState, useCallback } from 'react';
 import { Sheet, Cell, CellSelection } from '../types/sheet';
-import { batchEvaluateFormulas } from '../utils/formulaEvaluator';
 import { toast } from 'sonner';
 import voiceAssistant from '../utils/voiceAssistant';
 import { useUndoRedo } from './state/useUndoRedo';
 import { useSheetManagement } from './state/useSheetManagement';
 import { useCellManagement } from './state/useCellManagement';
+import { recalcAll } from '../utils/formulaWorkerClient';
 
 export const useSheetState = () => {
   // Initial state
@@ -109,25 +109,23 @@ export const useSheetState = () => {
       )
     );
 
-    // Batch evaluate formulas without blocking UI
-    setTimeout(() => {
-      const formulaCells = Object.keys(newCells).filter(
-        (id) => typeof newCells[id]?.value === 'string' && String(newCells[id].value).startsWith('=')
-      );
-
-      if (formulaCells.length > 0) {
-        batchEvaluateFormulas(formulaCells, newCells);
+    // Recalculate in a Web Worker to keep UI responsive
+    (async () => {
+      try {
+        const { cells: computed } = await recalcAll(newCells);
         setSheets(prevSheets => 
           prevSheets.map(sheet => 
             sheet.id === activeSheetId 
-              ? { ...sheet, cells: { ...newCells } }
+              ? { ...sheet, cells: { ...computed } }
               : sheet
           )
         );
+        toast.success("Template loaded successfully!");
+      } catch (err) {
+        console.error('Template recalculation error:', err);
+        toast.error('Template loaded with calculation issues.');
       }
-
-      toast.success("Template loaded successfully!");
-    }, 0);
+    })();
   };
 
   return {

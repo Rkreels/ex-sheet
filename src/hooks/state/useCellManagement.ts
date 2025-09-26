@@ -1,7 +1,7 @@
 
 import { Sheet, CellSelection } from '../../types/sheet';
 import voiceAssistant from '../../utils/voiceAssistant';
-import { batchEvaluateFormulas } from '../../utils/formulaEvaluator';
+import { recalcBatch } from '../../utils/formulaWorkerClient';
 interface UseCellManagementProps {
   activeSheet: Sheet;
   activeSheetId: string;
@@ -37,18 +37,21 @@ export const useCellManagement = ({
           delete updatedCells[cellId].calculatedValue;
         }
 
-        // Recalculate all formulas (fast batch) so dependents update immediately
-        try {
-          const formulaCells = Object.keys(updatedCells).filter(id => {
-            const v = updatedCells[id]?.value;
-            return typeof v === 'string' && String(v).startsWith('=');
-          });
-          if (formulaCells.length > 0) {
-            batchEvaluateFormulas(formulaCells, updatedCells);
+        // Recalculate asynchronously in a Web Worker to keep UI responsive
+        setTimeout(async () => {
+          try {
+            const formulaCells = Object.keys(updatedCells).filter(id => {
+              const v = updatedCells[id]?.value;
+              return typeof v === 'string' && String(v).startsWith('=');
+            });
+            if (formulaCells.length > 0) {
+              const { cells: computed } = await recalcBatch(updatedCells, formulaCells);
+              setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: computed } : s));
+            }
+          } catch (err) {
+            console.error('Recalculation error after cell edit (worker):', err);
           }
-        } catch (err) {
-          console.error('Recalculation error after cell edit:', err);
-        }
+        }, 0);
 
         return { ...sheet, cells: updatedCells };
       })

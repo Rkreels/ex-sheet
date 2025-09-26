@@ -14,7 +14,7 @@ import { useAdvancedCalculations } from './useAdvancedCalculations';
 import { useAdvancedCellSelection } from './useAdvancedCellSelection';
 import { toast } from 'sonner';
 import { createAdvancedFormulaEngine } from '../utils/advancedFormulaEngine';
-import { batchEvaluateFormulas } from '../utils/formulaEvaluator';
+import { recalcBatch } from '../utils/formulaWorkerClient';
 export const useCellOperations = (
   activeSheet: Sheet,
   activeSheetId: string,
@@ -89,27 +89,28 @@ export const useCellOperations = (
     const needsCalc = formulaCells.some(id => cells[id]?.calculatedValue === undefined);
     if (!needsCalc) return;
 
-    try {
-      const updatedCells = { ...cells };
-      batchEvaluateFormulas(formulaCells, updatedCells);
+    (async () => {
+      try {
+        const { cells: computed } = await recalcBatch(cells, formulaCells);
 
-      // Only update if there are actual changes
-      const hasChanges = formulaCells.some(cellId => {
-        return activeSheet.cells[cellId]?.calculatedValue !== updatedCells[cellId]?.calculatedValue;
-      });
+        // Only update if there are actual changes
+        const hasChanges = formulaCells.some(cellId => {
+          return activeSheet.cells[cellId]?.calculatedValue !== computed[cellId]?.calculatedValue;
+        });
 
-      if (hasChanges) {
-        setSheets(prevSheets => 
-          prevSheets.map(sheet => 
-            sheet.id === activeSheetId 
-              ? { ...sheet, cells: updatedCells }
-              : sheet
-          )
-        );
+        if (hasChanges) {
+          setSheets(prevSheets => 
+            prevSheets.map(sheet => 
+              sheet.id === activeSheetId 
+                ? { ...sheet, cells: computed }
+                : sheet
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Batch formula evaluation error (worker):', error);
       }
-    } catch (error) {
-      console.error('Batch formula evaluation error:', error);
-    }
+    })();
   }, [activeSheet?.cells, activeSheetId, setSheets]);
 
   // Insert cell/row/column

@@ -403,11 +403,76 @@ export const batchEvaluateFormulas = (
   return results;
 };
 
-// Simple topological sort for dependency resolution
+// Dependency-aware topological sort for correct recalculation order
 const topologicalSort = (cellIds: string[], cells: Record<string, Cell>): string[] => {
-  // This is a simplified implementation
-  // A full implementation would build a proper dependency graph
-  return cellIds.sort();
+  const targets = new Set(cellIds.map((id) => id.toUpperCase()));
+
+  // Build adjacency list: node -> set(dependencies within targets)
+  const graph: Record<string, Set<string>> = {};
+  const refsRegex = /\b([A-Z]+[0-9]+)\b/g;
+  const rangeRegex = /\b([A-Z]+[0-9]+:[A-Z]+[0-9]+)\b/g;
+
+  const addDeps = (id: string) => {
+    const cell = cells[id];
+    const deps = new Set<string>();
+    if (cell?.value?.startsWith('=')) {
+      const formula = cell.value.toUpperCase();
+      // Add single refs
+      const singleRefs = formula.match(refsRegex) || [];
+      for (const r of singleRefs) {
+        const ref = r.toUpperCase();
+        if (targets.has(ref) && ref !== id.toUpperCase()) deps.add(ref);
+      }
+      // Add ranges
+      const ranges = formula.match(rangeRegex) || [];
+      for (const range of ranges) {
+        try {
+          const expanded = expandRange(range.toUpperCase());
+          for (const ref of expanded) {
+            const up = ref.toUpperCase();
+            if (targets.has(up) && up !== id.toUpperCase()) deps.add(up);
+          }
+        } catch {
+          // ignore malformed ranges
+        }
+      }
+    }
+    graph[id] = deps;
+  };
+
+  for (const id of targets) addDeps(id);
+
+  // Kahn's algorithm
+  const inDegree: Record<string, number> = {};
+  for (const id of Object.keys(graph)) inDegree[id] = 0;
+  for (const [id, deps] of Object.entries(graph)) {
+    for (const d of deps) inDegree[id] = (inDegree[id] || 0) + 1;
+  }
+
+  const queue: string[] = Object.entries(inDegree)
+    .filter(([, deg]) => deg === 0)
+    .map(([id]) => id);
+
+  const order: string[] = [];
+  while (queue.length) {
+    const n = queue.shift()!;
+    order.push(n);
+    for (const [id, deps] of Object.entries(graph)) {
+      if (deps.has(n)) {
+        inDegree[id] -= 1;
+        deps.delete(n);
+        if (inDegree[id] === 0) queue.push(id);
+      }
+    }
+  }
+
+  // If cycle detected, append remaining nodes in deterministic order
+  if (order.length < targets.size) {
+    const remaining = Array.from(targets).filter((t) => !order.includes(t)).sort();
+    order.push(...remaining);
+  }
+
+  return order;
 };
 
 // Export the main evaluation function

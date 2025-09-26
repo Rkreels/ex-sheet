@@ -142,7 +142,7 @@ const SpreadsheetRow: React.FC<SpreadsheetRowProps> = ({
               isSelected={isSelected}
               width={width}
               height={rowHeight}
-              cells={cells}
+              
               onCellClick={onCellClick}
               onDoubleClick={onDoubleClick}
               onCellMouseDown={onCellMouseDown}

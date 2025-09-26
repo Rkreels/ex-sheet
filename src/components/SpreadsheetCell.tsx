@@ -17,7 +17,6 @@ interface SpreadsheetCellProps {
   isSelected: boolean;
   width: number;
   height: number;
-  cells: Record<string, Cell>;
   onCellClick: (rowIndex: number, colIndex: number) => void;
   onDoubleClick: (rowIndex: number, colIndex: number) => void;
   onCellMouseDown: (rowIndex: number, colIndex: number, e: React.MouseEvent) => void;
@@ -39,7 +38,6 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   isSelected,
   width,
   height,
-  cells,
   onCellClick,
   onDoubleClick,
   onCellMouseDown,
@@ -113,7 +111,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         setDisplayValue(String(cellData.value));
       }
     }
-  }, [cellData?.value, cellData?.format, (cellData as any)?.calculatedValue, cells]);
+  }, [cellData?.value, cellData?.format, (cellData as any)?.calculatedValue]);
 
   // Update edit value when cell becomes active
   useEffect(() => {
@@ -321,4 +319,4 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   );
 };
 
-export default SpreadsheetCell;
+export default React.memo(SpreadsheetCell);

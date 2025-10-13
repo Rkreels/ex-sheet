@@ -46,7 +46,15 @@ export const useCellManagement = ({
             });
             if (formulaCells.length > 0) {
               const { cells: computed } = await recalcBatch(updatedCells, formulaCells);
-              setSheets(prev => prev.map(s => s.id === activeSheetId ? { ...s, cells: computed } : s));
+              setSheets(prev => prev.map(s => {
+                if (s.id !== activeSheetId) return s;
+                const newMap: Record<string, any> = { ...s.cells };
+                Object.entries(computed).forEach(([id, cell]) => {
+                  const prevCell = (s.cells as any)[id] || {};
+                  newMap[id] = { ...prevCell, ...cell };
+                });
+                return { ...s, cells: newMap };
+              }));
             }
           } catch (err) {
             console.error('Recalculation error after cell edit (worker):', err);
@@ -68,7 +76,11 @@ export const useCellManagement = ({
     
     const cellValue = activeSheet.cells[cellId]?.value || '';
     setFormulaValue(cellValue);
-    voiceAssistant.speak(`Selected cell ${cellId}`);
+    // Defer speech to avoid blocking selection responsiveness
+    const ric = (cb: () => void) => typeof (window as any).requestIdleCallback === 'function' 
+      ? (window as any).requestIdleCallback(cb as any) 
+      : setTimeout(cb, 0);
+    ric(() => voiceAssistant.speak(`Selected cell ${cellId}`));
   };
 
   const handleCellSelectionChange = (selection: CellSelection | null) => {

@@ -100,11 +100,15 @@ export const useCellOperations = (
 
         if (hasChanges) {
           setSheets(prevSheets => 
-            prevSheets.map(sheet => 
-              sheet.id === activeSheetId 
-                ? { ...sheet, cells: computed }
-                : sheet
-            )
+            prevSheets.map(sheet => {
+              if (sheet.id !== activeSheetId) return sheet;
+              const newMap: Record<string, any> = { ...sheet.cells };
+              Object.entries(computed).forEach(([id, cell]) => {
+                const prevCell = (sheet.cells as any)[id] || {};
+                newMap[id] = { ...prevCell, ...cell };
+              });
+              return { ...sheet, cells: newMap };
+            })
           );
         }
       } catch (error) {

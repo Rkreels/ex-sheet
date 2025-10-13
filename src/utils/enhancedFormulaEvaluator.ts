@@ -117,6 +117,7 @@ export const evaluateEnhancedFormula = (
   }
 };
 
+
 // Process function calls with proper argument parsing
 const processFunctionCalls = (
   formula: string, 

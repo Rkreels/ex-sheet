@@ -137,11 +137,16 @@ export const useSheetState = () => {
 
           startTransition(() => {
             setSheets(prevSheets =>
-              prevSheets.map(sheet =>
-                sheet.id === currentSheetId
-                  ? { ...sheet, cells: { ...sheet.cells, ...Object.fromEntries(slice) } }
-                  : sheet
-              )
+              prevSheets.map(sheet => {
+                if (sheet.id !== currentSheetId) return sheet;
+                const mergedCells: Record<string, any> = { ...sheet.cells };
+                for (const [id, cell] of slice) {
+                  const prevCell = mergedCells[id] || {};
+                  // Create a NEW object to ensure React re-renders memoized cells
+                  mergedCells[id] = { ...prevCell, ...cell };
+                }
+                return { ...sheet, cells: mergedCells };
+              })
             );
           });
 

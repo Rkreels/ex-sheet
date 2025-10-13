@@ -87,8 +87,8 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
         return;
       }
 
-      // Fallback: defer evaluation to background worker to keep UI responsive
-      setDisplayValue('...');
+      // Fallback: show blank while worker computes to avoid placeholder
+      setDisplayValue('');
 
     } else {
       // Handle direct number formatting

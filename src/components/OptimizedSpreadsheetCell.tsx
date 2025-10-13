@@ -75,8 +75,8 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
           setDisplayValue(String(calculatedValue));
         }
       } else {
-        // Show placeholder while calculation is pending
-        setDisplayValue('...');
+        // Show blank while calculation is pending
+        setDisplayValue('');
       }
     } else {
       // Handle direct number formatting

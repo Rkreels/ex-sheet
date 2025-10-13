@@ -65,9 +65,8 @@ const EnhancedSpreadsheetCell: React.FC<EnhancedSpreadsheetCellProps> = ({
       return String(calcValue);
     }
     
-    // For formulas, defer evaluation to background worker for responsiveness
     if (value.startsWith('=')) {
-      return '...';
+      return '';
     }
 
     

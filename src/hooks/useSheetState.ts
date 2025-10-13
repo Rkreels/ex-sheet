@@ -109,17 +109,9 @@ export const useSheetState = () => {
       )
     );
 
-    // Defer recalculation to idle time and apply results in chunks to keep UI responsive
+    // Recalculate immediately and apply results in chunks to keep UI responsive
     const currentSheetId = activeSheetId;
-    const ric = (cb: () => void) => {
-      if (typeof (window as any).requestIdleCallback === 'function') {
-        (window as any).requestIdleCallback(cb);
-      } else {
-        setTimeout(cb, 0);
-      }
-    };
-
-    ric(async () => {
+    (async () => {
       try {
         const { cells: computed } = await recalcAll(newCells);
 
@@ -159,7 +151,7 @@ export const useSheetState = () => {
         console.error('Template recalculation error:', err);
         toast.error('Template loaded with calculation issues.');
       }
-    });
+    })();
 
   };
 

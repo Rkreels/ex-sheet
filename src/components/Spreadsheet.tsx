@@ -62,7 +62,6 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
     const cellId = getCellId(rowIndex, colIndex);
     setIsSelecting(true);
     setSelection({ startCell: cellId, endCell: cellId });
-    onCellSelect(cellId);
   }, [onCellSelect]);
 
   // Handle cell mouse over for selection extension

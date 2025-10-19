@@ -42,7 +42,7 @@ export const useCellManagement = ({
           try {
             const formulaCells = Object.keys(updatedCells).filter(id => {
               const v = updatedCells[id]?.value;
-              return typeof v === 'string' && String(v).startsWith('=');
+              return typeof v === 'string' && v.startsWith('=');
             });
             if (formulaCells.length > 0) {
               const { cells: computed } = await recalcBatch(updatedCells, formulaCells);

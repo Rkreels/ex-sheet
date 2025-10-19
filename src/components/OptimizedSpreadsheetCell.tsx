@@ -52,7 +52,8 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
       return;
     }
 
-    if (cellData.value.startsWith('=')) {
+    const value = String(cellData.value);
+    if (typeof cellData.value === 'string' && value.startsWith('=')) {
       // Use pre-calculated value from worker if available
       const calculatedValue = (cellData as any).calculatedValue;
       if (calculatedValue !== undefined) {

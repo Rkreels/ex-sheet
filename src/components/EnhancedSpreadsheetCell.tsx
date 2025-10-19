@@ -65,7 +65,7 @@ const EnhancedSpreadsheetCell: React.FC<EnhancedSpreadsheetCellProps> = ({
       return String(calcValue);
     }
     
-    if (value.startsWith('=')) {
+    if (typeof value === 'string' && value.startsWith('=')) {
       return '';
     }
 

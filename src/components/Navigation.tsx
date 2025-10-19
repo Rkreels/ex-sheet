@@ -20,13 +20,7 @@ const Navigation: React.FC<NavigationProps> = ({
   onLoad = () => toast.info('Load functionality available'),
   onExport = (format) => toast.success(`Exported as ${format.toUpperCase()}`)
 }) => {
-  const [isMuted, setIsMuted] = React.useState<boolean>(() => {
-    try {
-      return localStorage.getItem('voiceMuted') !== 'false';
-    } catch {
-      return true;
-    }
-  });
+  const [isMuted, setIsMuted] = React.useState<boolean>(true);
 
   const handleSalesPerformanceTemplate = () => {
     const salesData = generateSalesPerformanceTemplate();

@@ -1,5 +1,5 @@
 
-import { speak, getVoices, getBestMaleVoice } from './voiceUtils';
+import { speak, getVoices, getBestMaleVoice, toggleVoiceMuted } from './voiceUtils';
 import { toast } from 'sonner';
 import { createVoiceCommandHandler } from './voiceCommands';
 
@@ -188,16 +188,13 @@ const voiceAssistant = {
   },
   
   toggleMute: (): boolean => {
-    const isMuted = localStorage.getItem('voiceMuted') !== 'false';
-    localStorage.setItem('voiceMuted', (!isMuted).toString());
-    
-    if (!isMuted) {
+    const isMuted = toggleVoiceMuted();
+    if (isMuted) {
       speak("Voice output is now muted.");
     } else {
       speak("Voice output is now enabled. Welcome back!");
     }
-    
-    return !isMuted;
+    return isMuted;
   },
   
   bindHoverSpeak: () => {

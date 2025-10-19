@@ -135,6 +135,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
           
           e.preventDefault();
           setEditing(true);
+          (window as any).__formulaEditing = { activeCellId: cellId };
           
           if (e.key === 'Delete' || e.key === 'Backspace') {
             setEditValue('');
@@ -156,6 +157,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   // Start editing function for cell
   const startEditing = () => {
     setEditing(true);
+    (window as any).__formulaEditing = { activeCellId: cellId };
     setEditValue(cellData?.value || '');
   };
 
@@ -168,6 +170,7 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
   // Handle input blur (finish editing)
   const handleInputBlur = () => {
     setEditing(false);
+    (window as any).__formulaEditing = null;
     onCellBlur();
   };
 
@@ -176,15 +179,18 @@ const SpreadsheetCell: React.FC<SpreadsheetCellProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       setEditing(false);
+      (window as any).__formulaEditing = null;
       onCellKeyDown(e);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setEditing(false);
+      (window as any).__formulaEditing = null;
       setEditValue(cellData?.value || '');
       onCellValueChange(cellData?.value || '');
     } else if (e.key === 'Tab') {
       e.preventDefault();
       setEditing(false);
+      (window as any).__formulaEditing = null;
       onCellKeyDown(e);
     }
   };

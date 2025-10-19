@@ -32,6 +32,12 @@ export const useCellManagement = ({
         const updatedCells: Record<string, any> = { ...sheet.cells };
         const existing = updatedCells[cellId] || {};
         updatedCells[cellId] = { ...existing, value };
+
+        // Keep formula bar in sync for active cell edits
+        if (cellId === activeCell) {
+          setFormulaValue(value);
+        }
+
         // Clear any cached result for the edited cell
         if ('calculatedValue' in updatedCells[cellId]) {
           delete updatedCells[cellId].calculatedValue;

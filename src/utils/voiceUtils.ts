@@ -6,6 +6,12 @@
 // Check if speech synthesis is supported
 const isSpeechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
+// In-memory mute state (no localStorage)
+let voiceMuted = true;
+export const isVoiceMuted = () => voiceMuted;
+export const setVoiceMuted = (muted: boolean) => { voiceMuted = muted; };
+export const toggleVoiceMuted = () => { voiceMuted = !voiceMuted; return voiceMuted; };
+
 /**
  * Speak text using the browser's speech synthesis API
  * @param text The text to speak
@@ -17,9 +23,8 @@ export const speak = (text: string): void => {
     return;
   }
   
-  // Check if speech is muted in local storage - default to muted (true)
-  const isMuted = localStorage.getItem('voiceMuted') !== 'false';
-  if (isMuted) {
+  // Check in-memory mute flag
+  if (voiceMuted) {
     console.log('Voice is muted, not speaking:', text);
     return;
   }

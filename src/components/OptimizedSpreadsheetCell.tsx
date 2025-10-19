@@ -113,6 +113,7 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
     e.preventDefault();
     onDoubleClick(rowIndex, colIndex);
     setEditing(true);
+    (window as any).__formulaEditing = { activeCellId: cellId };
     setEditValue(cellData?.value || '');
     
     // Focus input after state update
@@ -134,6 +135,7 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
           
           e.preventDefault();
           setEditing(true);
+          (window as any).__formulaEditing = { activeCellId: cellId };
           
           if (e.key === 'Delete' || e.key === 'Backspace') {
             setEditValue('');
@@ -171,6 +173,7 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
   // Handle input blur
   const handleInputBlur = useCallback(() => {
     setEditing(false);
+    (window as any).__formulaEditing = null;
     onCellBlur();
   }, [onCellBlur]);
 
@@ -179,10 +182,12 @@ const OptimizedSpreadsheetCell = memo<OptimizedSpreadsheetCellProps>(({
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
       setEditing(false);
+      (window as any).__formulaEditing = null;
       onCellKeyDown(e);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setEditing(false);
+      (window as any).__formulaEditing = null;
       setEditValue(cellData?.value || '');
       onCellValueChange(cellData?.value || '');
     }

@@ -36,13 +36,17 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   const ROWS = 100;
   const COLUMNS = 26;
 
-  // Handle cell click
   const handleCellClick = useCallback((rowIndex: number, colIndex: number) => {
+    // If in formula editing mode, clicks are handled in onMouseDown to insert references
+    const formulaEditing = (window as any).__formulaEditing;
+    const isEditingFormulaHere = formulaEditing && formulaEditing.activeCellId === activeCell;
+    if (isEditingFormulaHere) return;
+
     const cellId = getCellId(rowIndex, colIndex);
     onCellSelect(cellId);
     setSelection(null);
     onCellSelectionChange(null);
-  }, [onCellSelect, onCellSelectionChange]);
+  }, [onCellSelect, onCellSelectionChange, activeCell]);
 
   // Handle cell double click for editing
   const handleDoubleClick = useCallback((rowIndex: number, colIndex: number) => {
@@ -58,11 +62,32 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({
   // Handle cell mouse down for selection start
   const handleCellMouseDown = useCallback((rowIndex: number, colIndex: number, e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click
+
+    // Excel-like formula point-and-click: if editing a formula, insert reference instead of changing selection
+    const formulaEditing = (window as any).__formulaEditing;
+    const isEditingFormulaHere = formulaEditing && formulaEditing.activeCellId === activeCell;
+    const currentVal = cells[activeCell]?.value || '';
+    if (isEditingFormulaHere && typeof currentVal === 'string' && currentVal.startsWith('=')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const refId = getCellId(rowIndex, colIndex);
+      onCellChange(activeCell, currentVal + refId);
+      // Refocus editor input
+      setTimeout(() => {
+        const input = document.querySelector(`[data-cell-id="${activeCell}"] input`) as HTMLInputElement | null;
+        input?.focus();
+        if (input) {
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
+        }
+      }, 0);
+      return;
+    }
     
     const cellId = getCellId(rowIndex, colIndex);
     setIsSelecting(true);
     setSelection({ startCell: cellId, endCell: cellId });
-  }, [onCellSelect]);
+  }, [onCellSelect, activeCell, cells]);
 
   // Handle cell mouse over for selection extension
   const handleCellMouseOver = useCallback((rowIndex: number, colIndex: number) => {

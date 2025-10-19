@@ -26,7 +26,7 @@ export const getEnhancedCellValue = (
   visited = new Set<string>()
 ): any => {
   // Check for circular reference
-  if (visited.has(cellRef)) {
+  if (visited.has(cellRef.toUpperCase())) {
     return '#CIRCULAR!';
   }
 
@@ -36,54 +36,79 @@ export const getEnhancedCellValue = (
     return expandedRefs.map(ref => getEnhancedCellValue(ref, cells, visited));
   }
 
-  const cell = cells[cellRef];
+  const cell = cells[cellRef.toUpperCase()];
   if (!cell) return 0;
 
-  // If calculated value exists, return it
-  if (cell.calculatedValue !== undefined) {
+  // If calculated value exists and is not undefined/null, return it
+  if (cell.calculatedValue !== undefined && cell.calculatedValue !== null) {
     return cell.calculatedValue;
   }
 
   const value = cell.value;
 
+  // Handle empty cells
+  if (value === undefined || value === null || value === '') return 0;
+
   // Handle formulas
   if (value && typeof value === 'string' && value.startsWith('=')) {
     const newVisited = new Set(visited);
-    newVisited.add(cellRef);
+    newVisited.add(cellRef.toUpperCase());
     
     try {
       const result = evaluateEnhancedFormula(value.substring(1), cells, newVisited);
       // Cache the result
-      cells[cellRef].calculatedValue = result;
+      cells[cellRef.toUpperCase()].calculatedValue = result;
       return result;
     } catch (error) {
+      console.error('Formula evaluation error in cell', cellRef, ':', error);
       return '#ERROR!';
     }
   }
 
   // Handle different data types
+  if (typeof value === 'number') {
+    return value;
+  }
+  
   if (typeof value === 'string') {
     // Handle percentage
     if (value.endsWith('%')) {
       const numValue = parseFloat(value.slice(0, -1));
-      return isNaN(numValue) ? value : numValue / 100;
+      return isNaN(numValue) ? 0 : numValue / 100;
     }
     
     // Handle currency
-    if (value.startsWith('$')) {
+    if (value.startsWith('$') || value.startsWith('€') || value.startsWith('£')) {
       const numValue = parseFloat(value.slice(1).replace(/,/g, ''));
+      return isNaN(numValue) ? 0 : numValue;
+    }
+    
+    // Handle negative numbers in parentheses: (100)
+    if (value.startsWith('(') && value.endsWith(')')) {
+      const numValue = parseFloat(value.slice(1, -1).replace(/,/g, ''));
+      return isNaN(numValue) ? value : -numValue;
+    }
+    
+    // Handle numbers with commas: 1,000
+    if (value.includes(',') && /^[\d,]+\.?\d*$/.test(value)) {
+      const numValue = parseFloat(value.replace(/,/g, ''));
       return isNaN(numValue) ? value : numValue;
     }
     
     // Handle dates
     const dateValue = new Date(value);
-    if (!isNaN(dateValue.getTime()) && value.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+    if (!isNaN(dateValue.getTime()) && value.match(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/)) {
       return dateValue;
     }
     
     // Try to convert to number
     const numValue = parseFloat(value);
-    return isNaN(numValue) ? value : numValue;
+    if (!isNaN(numValue) && isFinite(numValue)) {
+      return numValue;
+    }
+    
+    // Return as string for text values
+    return value;
   }
 
   return value;
@@ -118,45 +143,67 @@ export const evaluateEnhancedFormula = (
 };
 
 
-// Process function calls with proper argument parsing
+// Process function calls with proper argument parsing - handles nested functions recursively
 const processFunctionCalls = (
   formula: string, 
   cells: Record<string, Cell>, 
   visited: Set<string>
 ): string => {
-  // Enhanced function regex to handle nested functions
-  const functionRegex = /([A-Z_]+)\s*\(([^()]*(?:\([^()]*\))*[^()]*)\)/gi;
-  
   let result = formula;
-  let match;
+  let hasChanges = true;
+  let iterations = 0;
+  const MAX_ITERATIONS = 50; // Prevent infinite loops
   
-  // Process functions from innermost to outermost
-  while ((match = functionRegex.exec(formula)) !== null) {
-    const funcName = match[1].toUpperCase();
-    const argsString = match[2];
+  // Keep processing until no more functions are found
+  while (hasChanges && iterations < MAX_ITERATIONS) {
+    hasChanges = false;
+    iterations++;
     
-    try {
-      const func = allFormulas[funcName];
-      if (!func) {
-        throw new Error(`Unknown function: ${funcName}`);
-      }
+    // Match function calls - process innermost first
+    // This regex matches: FUNCNAME(args) where args can contain nested parens
+    const functionRegex = /([A-Z_]+)\s*\(([^()]*(?:\((?:[^()]*(?:\([^()]*\))*[^()]*)\)[^()]*)*)\)/gi;
+    
+    result = result.replace(functionRegex, (match, funcName, argsString) => {
+      hasChanges = true;
+      const upperFuncName = funcName.toUpperCase();
+      
+      try {
+        const func = allFormulas[upperFuncName];
+        if (!func) {
+          console.error(`Unknown function: ${upperFuncName}`);
+          return '#NAME?';
+        }
 
-      // Parse arguments with proper handling of nested structures
-      const args = parseEnhancedArguments(argsString, cells, visited);
-      
-      // Execute the function
-      const funcResult = func.execute ? func.execute(args) : func(args);
-      
-      // Replace the function call with its result
-      result = result.replace(match[0], String(funcResult));
-      
-      // Reset regex to process any remaining functions
-      functionRegex.lastIndex = 0;
-      
-    } catch (error) {
-      console.error(`Error executing function ${funcName}:`, error);
-      result = result.replace(match[0], '#ERROR!');
-    }
+        // Parse arguments with proper handling of nested structures
+        const args = parseEnhancedArguments(argsString, cells, visited);
+        
+        // Execute the function
+        let funcResult;
+        if (func.execute) {
+          funcResult = func.execute(args);
+        } else if (typeof func === 'function') {
+          funcResult = func(args);
+        } else {
+          funcResult = '#VALUE!';
+        }
+        
+        // Handle array results from functions
+        if (Array.isArray(funcResult)) {
+          // Flatten arrays for use in calculations
+          return funcResult.flat(Infinity).join(',');
+        }
+        
+        return String(funcResult);
+        
+      } catch (error) {
+        console.error(`Error executing function ${upperFuncName}:`, error);
+        return '#ERROR!';
+      }
+    });
+  }
+  
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn('Max iterations reached in function processing');
   }
   
   return result;
@@ -241,14 +288,16 @@ const processArgument = (
     return content.split(delimiter).map(item => processArgument(item.trim(), cells, visited));
   }
 
-  // Handle cell ranges (A1:B5)
+// Handle cell ranges (A1:B5)
   if (/^[A-Z]+[0-9]+:[A-Z]+[0-9]+$/i.test(arg)) {
-    return getEnhancedCellValue(arg, cells, visited);
+    const rangeValue = getEnhancedCellValue(arg.toUpperCase(), cells, visited);
+    // Ensure array results are flattened for function arguments
+    return Array.isArray(rangeValue) ? rangeValue.flat(Infinity) : rangeValue;
   }
 
   // Handle single cell references (A1, B2, etc.)
   if (/^[A-Z]+[0-9]+$/i.test(arg)) {
-    return getEnhancedCellValue(arg, cells, visited);
+    return getEnhancedCellValue(arg.toUpperCase(), cells, visited);
   }
 
   // Handle nested formulas
@@ -282,17 +331,44 @@ const processCellReferences = (
   cells: Record<string, Cell>, 
   visited: Set<string>
 ): string => {
-  // Match cell references that are not part of function calls
-  const cellRegex = /(?<![A-Z_0-9])([A-Z]+[0-9]+)(?![A-Z0-9_:])/gi;
+  // First handle ranges (A1:B5)
+  const rangeRegex = /\b([A-Z]+[0-9]+:[A-Z]+[0-9]+)\b/gi;
+  let result = formula.replace(rangeRegex, (rangeRef) => {
+    const value = getEnhancedCellValue(rangeRef.toUpperCase(), cells, visited);
+    if (Array.isArray(value)) {
+      // For ranges in formulas (not in functions), join the values
+      return value.flat(Infinity).join(',');
+    }
+    return String(value);
+  });
   
-  return formula.replace(cellRegex, (cellRef) => {
-    if (visited.has(cellRef.toUpperCase())) {
+  // Then handle single cell references (A1, B2, etc.)
+  // Match cell references that are not part of ranges
+  const cellRegex = /(?<![A-Z_0-9:])([A-Z]+[0-9]+)(?![A-Z0-9_:])/gi;
+  
+  result = result.replace(cellRegex, (cellRef) => {
+    const upper = cellRef.toUpperCase();
+    if (visited.has(upper)) {
       return '#CIRCULAR!';
     }
     
-    const value = getEnhancedCellValue(cellRef.toUpperCase(), cells, visited);
+    const value = getEnhancedCellValue(upper, cells, visited);
+    
+    // Handle array values
+    if (Array.isArray(value)) {
+      return value.flat(Infinity).join(',');
+    }
+    
+    // Convert to number if possible for calculations
+    const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+    if (!isNaN(numValue) && isFinite(numValue)) {
+      return String(numValue);
+    }
+    
     return String(value);
   });
+  
+  return result;
 };
 
 // Handle mathematical operators and expressions
@@ -319,30 +395,65 @@ const processOperators = (formula: string): string => {
 // Safely evaluate the final mathematical expression
 const evaluateFinalExpression = (expression: string): any => {
   try {
-    // Handle CONCATENATE functions for string operations
-    if (expression.includes('CONCATENATE')) {
-      return expression; // Return as is for now, should be processed by function handler
+    // Clean up the expression
+    let cleanExpr = expression.trim();
+    
+    // Handle error codes - don't evaluate them
+    if (cleanExpr.startsWith('#') && cleanExpr.endsWith('!')) {
+      return cleanExpr;
     }
-
-    // For pure mathematical expressions
-    if (/^[\d\s+\-*/.()]+$/.test(expression)) {
-      const result = new Function(`"use strict"; return (${expression})`)();
+    
+    // If expression contains only error codes, return the first one
+    if (/^#[A-Z]+!$/.test(cleanExpr)) {
+      return cleanExpr;
+    }
+    
+    // Handle pure string results (from CONCATENATE etc)
+    if (cleanExpr.includes('CONCATENATE') || /^["'].*["']$/.test(cleanExpr)) {
+      return cleanExpr.replace(/^["']|["']$/g, '');
+    }
+    
+    // Handle simple number returns
+    const numValue = parseFloat(cleanExpr);
+    if (!isNaN(numValue) && isFinite(numValue) && /^-?\d+\.?\d*$/.test(cleanExpr)) {
+      return numValue;
+    }
+    
+    // For mathematical expressions with operators
+    if (/^[\d\s+\-*/.()%]+$/.test(cleanExpr)) {
+      // Handle percentage in final expression
+      cleanExpr = cleanExpr.replace(/(\d+\.?\d*)%/g, '($1/100)');
+      
+      const result = new Function(`"use strict"; return (${cleanExpr})`)();
       
       if (typeof result === 'number') {
         if (isNaN(result)) return '#VALUE!';
         if (!isFinite(result)) return '#DIV/0!';
-        return result;
+        // Round to avoid floating point errors
+        return Math.round(result * 1e10) / 1e10;
       }
       return result;
     }
-
-    // For mixed expressions, try direct evaluation
-    const result = new Function(`"use strict"; return (${expression})`)();
-    return result;
+    
+    // Try to evaluate more complex expressions
+    // Remove any trailing/leading whitespace and check for valid expression
+    if (cleanExpr.length > 0 && !/[a-zA-Z]/.test(cleanExpr.replace(/[eE]/g, ''))) {
+      const result = new Function(`"use strict"; return (${cleanExpr})`)();
+      
+      if (typeof result === 'number') {
+        if (isNaN(result)) return '#VALUE!';
+        if (!isFinite(result)) return '#DIV/0!';
+        return Math.round(result * 1e10) / 1e10;
+      }
+      return result;
+    }
+    
+    // If can't evaluate mathematically, return as-is
+    return cleanExpr;
 
   } catch (error) {
-    // If mathematical evaluation fails, return as string
-    return expression;
+    console.error('Expression evaluation error:', error, 'Expression:', expression);
+    return '#VALUE!';
   }
 };
 
@@ -388,13 +499,17 @@ export const batchEvaluateFormulas = (
 
   for (const cellId of sortedCells) {
     const cell = cells[cellId];
-    if (cell?.value?.startsWith('=')) {
+    if (cell?.value && typeof cell.value === 'string' && cell.value.startsWith('=')) {
       try {
-        const result = evaluateEnhancedFormula(cell.value.substring(1), cells, visited);
+        // Clear any previous cached value to force recalculation
+        delete cells[cellId].calculatedValue;
+        
+        const result = evaluateEnhancedFormula(cell.value.substring(1), cells, new Set());
         results[cellId] = result;
         // Update the calculated value in the cell
         cells[cellId].calculatedValue = result;
       } catch (error) {
+        console.error(`Error evaluating ${cellId}:`, error);
         results[cellId] = '#ERROR!';
         cells[cellId].calculatedValue = '#ERROR!';
       }

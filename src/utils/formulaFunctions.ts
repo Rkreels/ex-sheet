@@ -27,6 +27,30 @@ export const MIN = (args: any[]): number => {
   return flatArgs.length > 0 ? Math.min(...flatArgs) : 0;
 };
 
+export const PRODUCT = (args: any[]): number => {
+  const flatArgs = args.flat(Infinity).filter(val => !isNaN(parseFloat(val)));
+  if (flatArgs.length === 0) return 0;
+  return flatArgs.reduce((product, val) => product * parseFloat(val), 1);
+};
+
+export const POWER = (args: any[]): number => {
+  if (args.length !== 2) throw new Error('POWER requires exactly 2 arguments');
+  const [base, exponent] = args.map(Number);
+  return Math.pow(base, exponent);
+};
+
+export const SQRT = (args: any[]): number => {
+  if (args.length !== 1) throw new Error('SQRT requires exactly 1 argument');
+  const value = Number(args[0]);
+  if (value < 0) return NaN;
+  return Math.sqrt(value);
+};
+
+export const ABS = (args: any[]): number => {
+  if (args.length !== 1) throw new Error('ABS requires exactly 1 argument');
+  return Math.abs(Number(args[0]));
+};
+
 // Lookup and Reference Functions
 export const VLOOKUP = (args: any[]): any => {
   if (args.length < 3) return '#N/A';
@@ -382,6 +406,10 @@ export const formulaFunctions: Record<string, any> = {
   COUNT: { execute: COUNT, category: 'math', description: 'Counts the number of cells with numbers' },
   MAX: { execute: MAX, category: 'math', description: 'Returns the largest value' },
   MIN: { execute: MIN, category: 'math', description: 'Returns the smallest value' },
+  PRODUCT: { execute: PRODUCT, category: 'math', description: 'Multiplies all numbers together' },
+  POWER: { execute: POWER, category: 'math', description: 'Returns a number raised to a power' },
+  SQRT: { execute: SQRT, category: 'math', description: 'Returns the square root' },
+  ABS: { execute: ABS, category: 'math', description: 'Returns the absolute value' },
   
   // Lookup
   VLOOKUP: { execute: VLOOKUP, category: 'lookup', description: 'Vertical lookup in a table' },

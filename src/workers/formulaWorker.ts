@@ -19,6 +19,15 @@ self.onmessage = async (e: MessageEvent) => {
       };
 
       const working = { ...cells };
+      
+      // Clear calculated values to force fresh calculation
+      cellsToEvaluate.forEach(cellId => {
+        if (working[cellId]) {
+          delete working[cellId].calculatedValue;
+        }
+      });
+      
+      // Evaluate formulas
       batchEvaluateFormulas(cellsToEvaluate, working);
 
       // Post full updated cells back
@@ -37,6 +46,13 @@ self.onmessage = async (e: MessageEvent) => {
       );
 
       if (formulaCells.length > 0) {
+        // Clear calculated values to force fresh calculation
+        formulaCells.forEach(cellId => {
+          if (working[cellId]) {
+            delete working[cellId].calculatedValue;
+          }
+        });
+        
         batchEvaluateFormulas(formulaCells, working);
       }
 
@@ -51,6 +67,7 @@ self.onmessage = async (e: MessageEvent) => {
     // @ts-ignore
     postMessage({ type: 'error', payload: { message: 'Unknown worker message type' } });
   } catch (err) {
+    console.error('Worker error:', err);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     postMessage({ type: 'error', payload: { message: (err as Error)?.message || 'Worker error' } });

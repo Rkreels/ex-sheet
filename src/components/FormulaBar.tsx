@@ -21,16 +21,14 @@ const FormulaBar: React.FC<FormulaBarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (value.startsWith('=')) {
-      // Get text after the = symbol
-      const formulaText = value.substring(1).toUpperCase();
-      
-      // Check if we're typing a function name
+    const v = typeof value === 'string' ? value : '';
+    if (typeof v === 'string' && v.startsWith('=')) {
+      const formulaText = v.substring(1).toUpperCase();
+      // Only suggest while typing function name (letters only)
       if (/^[A-Z]*$/.test(formulaText)) {
-        const matchedFunctions = Object.values(formulaFunctions)
-          .filter(fn => fn.name.startsWith(formulaText))
+        const matchedFunctions = Object.values(formulaFunctions || {})
+          .filter((fn) => typeof fn?.name === 'string' && fn.name.toUpperCase().startsWith(formulaText))
           .sort((a, b) => a.name.localeCompare(b.name));
-        
         setSuggestions(matchedFunctions);
         setShowSuggestions(matchedFunctions.length > 0);
       } else {
